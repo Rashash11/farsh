@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="_ds/modernist-e9855935-b7ff-4a14-ab9d-08d11d0948a2/styles.css">
+  <script src="_ds/modernist-e9855935-b7ff-4a14-ab9d-08d11d0948a2/_ds_bundle.js"></script>
+  <script src="./image-slot.js"></script>
+  <style>
+    html { scroll-behavior: smooth; }
+    body { margin: 0; background: var(--color-bg); color: var(--color-text); font-family: var(--font-body); }
+    a { color: var(--color-accent-700); text-decoration: none; }
+    a:hover { color: var(--color-accent); }
+    @keyframes riseIn { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+    @keyframes drawIn { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+    @keyframes slowZoom { 0% { transform: scale(1); } 100% { transform: scale(1.07); } }
+    @keyframes floatArrow { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(4px); } }
+    @keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+    @keyframes wipeUp { from { clip-path: inset(100% 0 0 0); } to { clip-path: inset(0 0 0 0); } }
+    @keyframes wordRise { from { opacity: 0; transform: translateY(0.5em) rotate(1.5deg); } to { opacity: 1; transform: none; } }
+    @keyframes railGrow { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; } }
+  </style>
+</helmet>
+
+<div style="max-width:1400px;margin:0 auto;border-left:2px solid var(--color-divider);border-right:2px solid var(--color-divider);min-height:100vh;">
+
+  <nav style="position:sticky;top:0;z-index:40;display:flex;align-items:center;justify-content:space-between;gap:24px;padding:18px 40px;background:color-mix(in srgb, var(--color-bg) 92%, transparent);backdrop-filter:blur(8px);border-bottom:2px solid var(--color-divider);">
+    <div style="display:flex;align-items:baseline;gap:14px;">
+      <span style="font-family:var(--font-heading);font-weight:800;font-size:22px;letter-spacing:-0.03em;">farsh<span style="color:var(--color-accent);">!</span></span>
+      <span style="font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:var(--color-neutral-600);">Bound to order</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:28px;">
+      <a href="#books" style="font-size:13px;letter-spacing:0.06em;text-transform:uppercase;color:var(--color-text);border-bottom:2px solid transparent;transition:border-color 0.2s ease, color 0.2s ease;" style-hover="border-color:var(--color-accent);color:var(--color-accent-700);">Books</a>
+      <a href="#process" style="font-size:13px;letter-spacing:0.06em;text-transform:uppercase;color:var(--color-text);border-bottom:2px solid transparent;transition:border-color 0.2s ease, color 0.2s ease;" style-hover="border-color:var(--color-accent);color:var(--color-accent-700);">Process</a>
+      <a href="#formats" style="font-size:13px;letter-spacing:0.06em;text-transform:uppercase;color:var(--color-text);border-bottom:2px solid transparent;transition:border-color 0.2s ease, color 0.2s ease;" style-hover="border-color:var(--color-accent);color:var(--color-accent-700);">Formats</a>
+      <a href="./Book Builder.dc.html" style="background:var(--color-accent);color:var(--color-bg);font-family:var(--font-heading);font-weight:800;font-size:13px;letter-spacing:0.04em;text-transform:uppercase;padding:11px 20px;" style-hover="background:var(--color-accent-600);">Start a book</a>
+    </div>
+  </nav>
+
+  <section style="display:grid;grid-template-columns:{{ heroCols }};border-bottom:2px solid var(--color-divider);">
+    <div style="{{ heroCopyStyle }}">
+      <div style="{{ heroRailStyle }}">
+        <span style="font-size:11px;letter-spacing:0.2em;text-transform:uppercase;color:var(--color-neutral-600);writing-mode:vertical-rl;">Est. 2019 · Bound to order</span>
+        <span style="width:2px;flex:1;background:var(--color-text);transform-origin:top center;animation:railGrow 1.2s cubic-bezier(.16,1,.3,1) 0.5s both;"></span>
+      </div>
+      <div style="font-size:12px;letter-spacing:0.16em;text-transform:uppercase;color:var(--color-accent-700);margin-bottom:14px;animation:riseIn 0.6s ease-out 0.05s both;">Personalised hardcover books</div>
+      <div style="height:2px;width:96px;background:var(--color-accent);margin-bottom:26px;transform-origin:left center;animation:drawIn 0.9s cubic-bezier(.16,1,.3,1) 0.25s both;"></div>
+      <h1 style="font-size:{{ h1Size }};line-height:0.92;letter-spacing:-0.045em;margin:0 0 30px;max-width:15ch;"><span style="display:inline-block;animation:wordRise 0.85s cubic-bezier(.16,1,.3,1) 0.14s both;">A</span> <span style="display:inline-block;animation:wordRise 0.85s cubic-bezier(.16,1,.3,1) 0.22s both;">story</span> <span style="display:inline-block;animation:wordRise 0.85s cubic-bezier(.16,1,.3,1) 0.3s both;">with</span> <span style="display:inline-block;animation:wordRise 0.85s cubic-bezier(.16,1,.3,1) 0.38s both;">their</span> <span style="display:inline-block;animation:wordRise 0.85s cubic-bezier(.16,1,.3,1) 0.46s both;color:var(--color-accent);">name</span> <span style="display:inline-block;animation:wordRise 0.85s cubic-bezier(.16,1,.3,1) 0.54s both;">in</span> <span style="display:inline-block;animation:wordRise 0.85s cubic-bezier(.16,1,.3,1) 0.62s both;">it.</span></h1>
+      <p style="font-size:19px;line-height:1.55;max-width:44ch;margin:0 0 34px;color:var(--color-neutral-800);text-wrap:pretty;animation:riseIn 0.8s cubic-bezier(.16,1,.3,1) 0.7s both;">We write the people you love into a proper book — their name, their likeness, the details only you know — then print and bind it by hand. For a five year old, or for the person you have spent thirty years with.</p>
+      <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:center;animation:riseIn 0.8s cubic-bezier(.16,1,.3,1) 0.82s both;">
+        <a href="./Book Builder.dc.html" style="background:var(--color-accent);color:var(--color-bg);font-family:var(--font-heading);font-weight:800;font-size:14px;letter-spacing:0.04em;text-transform:uppercase;padding:16px 28px;transition:background 0.2s ease, letter-spacing 0.3s ease;" style-hover="background:var(--color-accent-600);letter-spacing:0.09em;">Start a book</a>
+        <a href="#books" style="border:2px solid var(--color-text);color:var(--color-text);font-family:var(--font-heading);font-weight:800;font-size:14px;letter-spacing:0.04em;text-transform:uppercase;padding:14px 26px;display:inline-flex;align-items:center;gap:10px;transition:background 0.2s ease, color 0.2s ease;" style-hover="background:var(--color-text);color:var(--color-bg);">See the books<span style="display:inline-block;animation:floatArrow 1.8s ease-in-out infinite;">↓</span></a>
+      </div>
+    </div>
+    <div style="{{ heroImageStyle }}">
+      <div data-pointer="16" data-parallax="0.06" style="position:absolute;inset:-4%;transition:transform 0.5s cubic-bezier(.16,1,.3,1);animation:wipeUp 1.1s cubic-bezier(.16,1,.3,1) 0.2s both;">
+        <image-slot id="farsh-hero-book" shape="rect" fit="cover" placeholder="Drop a photograph of a finished book"></image-slot>
+      </div>
+      <div style="position:absolute;left:0;bottom:0;background:var(--color-text);color:var(--color-bg);font-size:11px;letter-spacing:0.14em;text-transform:uppercase;padding:10px 16px;pointer-events:none;animation:riseIn 0.7s ease-out 1.1s both;">Cloth edition, foil-stamped spine</div>
+    </div>
+  </section>
+
+  <div style="background:var(--color-text);color:var(--color-bg);overflow:hidden;padding:13px 0;border-bottom:2px solid var(--color-divider);">
+    <div style="display:flex;width:200%;animation:marquee 34s linear infinite;">
+      <div style="display:flex;flex-shrink:0;width:50%;justify-content:space-around;font-family:var(--font-heading);font-weight:800;font-size:12px;letter-spacing:0.16em;text-transform:uppercase;white-space:nowrap;">
+        <span>Written to order</span><span style="color:var(--color-accent-400);">Printed on 150gsm uncoated</span><span>Sewn and cased by hand</span><span style="color:var(--color-accent-400);">Posted within five days</span>
+      </div>
+      <div style="display:flex;flex-shrink:0;width:50%;justify-content:space-around;font-family:var(--font-heading);font-weight:800;font-size:12px;letter-spacing:0.16em;text-transform:uppercase;white-space:nowrap;">
+        <span>Written to order</span><span style="color:var(--color-accent-400);">Printed on 150gsm uncoated</span><span>Sewn and cased by hand</span><span style="color:var(--color-accent-400);">Posted within five days</span>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:{{ statCols }};border-bottom:2px solid var(--color-divider);">
+    <sc-for list="{{ stats }}" as="stat" hint-placeholder-count="4">
+      <div data-reveal="stagger" style="{{ stat.style }}">
+        <div data-count="{{ stat.count }}" data-decimals="{{ stat.decimals }}" data-suffix="{{ stat.suffix }}" style="font-family:var(--font-heading);font-weight:800;font-size:30px;letter-spacing:-0.03em;margin-bottom:6px;">{{ stat.value }}</div>
+        <div style="font-size:12px;letter-spacing:0.1em;text-transform:uppercase;color:var(--color-neutral-600);">{{ stat.label }}</div>
+      </div>
+    </sc-for>
+  </div>
+
+  <section id="books" style="border-bottom:2px solid var(--color-divider);">
+    <div style="display:grid;grid-template-columns:{{ modeCols }};">
+      <div onClick="{{ onPickKids }}" style="{{ kidsTabStyle }}">
+        <div style="font-size:11px;letter-spacing:0.16em;text-transform:uppercase;margin-bottom:14px;opacity:0.7;">01 — For a child</div>
+        <div style="font-family:var(--font-heading);font-weight:800;font-size:26px;letter-spacing:-0.025em;margin-bottom:10px;">They are the hero</div>
+        <p style="font-size:15px;line-height:1.6;margin:0;max-width:40ch;opacity:0.85;">Their name, their hair, their favourite animal — written through a full illustrated adventure.</p>
+      </div>
+      <div onClick="{{ onPickLove }}" style="{{ loveTabStyle }}">
+        <div style="font-size:11px;letter-spacing:0.16em;text-transform:uppercase;margin-bottom:14px;opacity:0.7;">02 — For the one you love</div>
+        <div style="font-family:var(--font-heading);font-weight:800;font-size:26px;letter-spacing:-0.025em;margin-bottom:10px;">Your story, hand-bound</div>
+        <p style="font-size:15px;line-height:1.6;margin:0;max-width:40ch;opacity:0.85;">How you met, the years since, the private jokes. Set in type and bound in cloth.</p>
+      </div>
+    </div>
+    <div style="{{ gallerySectionStyle }}">
+      <div data-reveal="block" style="display:flex;align-items:baseline;justify-content:space-between;gap:24px;flex-wrap:wrap;margin-bottom:36px;">
+        <h2 style="font-size:{{ h2Size }};letter-spacing:-0.03em;margin:0;">{{ galleryTitle }}</h2>
+        <span style="font-size:13px;letter-spacing:0.08em;text-transform:uppercase;color:var(--color-neutral-600);">{{ galleryNote }}</span>
+      </div>
+      <div style="display:grid;grid-template-columns:{{ bookCols }};gap:0;background:var(--color-bg);border-top:2px solid var(--color-divider);border-left:2px solid var(--color-divider);">
+        <sc-for list="{{ books }}" as="book" hint-placeholder-count="5">
+          <a href="./Book Builder.dc.html" data-reveal="stagger" style="{{ book.cardStyle }}" style-hover="background:var(--color-accent-100);">
+            <div style="{{ book.artStyle }}">
+              <sc-if value="{{ book.isSlot }}" hint-placeholder-val="{{ false }}">
+                <image-slot id="farsh-feature-cover" shape="rect" fit="cover" placeholder="Drop a photograph of the book in hand"></image-slot>
+              </sc-if>
+              <sc-if value="{{ book.isArt }}" hint-placeholder-val="{{ true }}">
+                <img src="{{ book.img }}" alt="{{ book.title }}" style="width:100%;height:100%;object-fit:contain;transition:transform 0.7s cubic-bezier(.16,1,.3,1);{{ imgFilter }}" style-hover="transform:scale(1.04);"/>
+              </sc-if>
+              <sc-if value="{{ book.isType }}" hint-placeholder-val="{{ false }}">
+                <div style="width:100%;height:100%;background:var(--color-text);color:var(--color-bg);display:flex;flex-direction:column;justify-content:flex-end;padding:22px;box-sizing:border-box;">
+                  <div style="font-size:10px;letter-spacing:0.18em;text-transform:uppercase;opacity:0.6;margin-bottom:10px;">Farsh · cloth edition</div>
+                  <div style="font-family:var(--font-heading);font-weight:800;font-size:22px;line-height:1.05;letter-spacing:-0.03em;">{{ book.title }}</div>
+                </div>
+              </sc-if>
+            </div>
+            <div style="padding:18px;border-top:2px solid var(--color-divider);">
+              <div style="font-size:11px;letter-spacing:0.14em;color:var(--color-neutral-500);margin-bottom:8px;">{{ book.index }}</div>
+              <div style="font-family:var(--font-heading);font-weight:800;font-size:{{ book.titleSize }};letter-spacing:-0.02em;margin-bottom:4px;">{{ book.title }}</div>
+              <div style="font-size:12px;letter-spacing:0.06em;text-transform:uppercase;color:var(--color-neutral-600);">{{ book.meta }}</div>
+              <div style="font-size:12px;letter-spacing:0.06em;text-transform:uppercase;color:var(--color-accent-700);margin-top:10px;display:flex;align-items:center;gap:6px;">Peek inside<span>→</span></div>
+            </div>
+          </a>
+        </sc-for>
+      </div>
+    </div>
+  </section>
+
+  <section id="process" style="border-bottom:2px solid var(--color-divider);">
+    <div style="{{ bleedStyle }}">
+      <div data-parallax="0.14" style="position:absolute;inset:-9% 0;">
+        <image-slot id="farsh-process-spread" shape="rect" fit="cover" placeholder="Drop a photograph of an open spread"></image-slot>
+      </div>
+      <div style="position:absolute;left:0;bottom:0;background:var(--color-text);color:var(--color-bg);font-size:11px;letter-spacing:0.14em;text-transform:uppercase;padding:12px 18px;pointer-events:none;">Inside a finished book</div>
+    </div>
+    <div style="{{ processGrid }}">
+      <div style="{{ processStickyStyle }}">
+        <h2 style="font-size:{{ h2Size }};letter-spacing:-0.035em;margin:0 0 14px;">How a book gets made</h2>
+        <p style="font-size:16px;line-height:1.6;color:var(--color-neutral-700);margin:0 0 32px;max-width:32ch;">Three steps on your side. Everything after that happens in the bindery.</p>
+        <div style="height:2px;background:var(--color-neutral-300);margin-bottom:12px;">
+          <div data-progress-bar="1" style="height:2px;background:var(--color-accent);width:100%;transform:scaleX(0);transform-origin:left center;"></div>
+        </div>
+        <div data-progress-label="1" style="font-family:var(--font-heading);font-weight:800;font-size:12px;letter-spacing:0.14em;color:var(--color-neutral-600);">01 / 03</div>
+      </div>
+      <div style="display:flex;flex-direction:column;">
+        <sc-for list="{{ steps }}" as="step" hint-placeholder-count="3">
+          <div data-reveal="block" style="{{ step.rowStyle }}">
+            <div style="font-family:var(--font-heading);font-weight:800;font-size:{{ stepNumSize }};line-height:0.8;letter-spacing:-0.05em;color:var(--color-accent-300);">{{ step.n }}</div>
+            <div>
+              <h3 style="font-size:24px;letter-spacing:-0.025em;margin:0 0 12px;">{{ step.title }}</h3>
+              <p style="font-size:16px;line-height:1.65;margin:0;color:var(--color-neutral-800);max-width:44ch;">{{ step.desc }}</p>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </section>
+
+  <section id="formats" style="padding:80px 40px;border-bottom:2px solid var(--color-divider);">
+    <div style="display:grid;grid-template-columns:{{ formatCols }};gap:48px;align-items:start;">
+      <div>
+        <h2 style="font-size:{{ h2Size }};letter-spacing:-0.03em;margin:0 0 12px;">Formats</h2>
+        <p style="font-size:16px;line-height:1.65;color:var(--color-neutral-700);margin:0;max-width:34ch;">Every book is printed on 150gsm uncoated stock. The cloth edition is sewn and cased by hand, which takes a week longer.</p>
+      </div>
+      <table class="table" data-reveal="block" style="width:100%;border-collapse:collapse;">
+        <thead>
+          <tr>
+            <th style="text-align:left;font-size:12px;letter-spacing:0.1em;text-transform:uppercase;padding:0 0 14px;border-bottom:2px solid var(--color-text);">Edition</th>
+            <th style="text-align:left;font-size:12px;letter-spacing:0.1em;text-transform:uppercase;padding:0 0 14px;border-bottom:2px solid var(--color-text);">Included</th>
+            <th style="text-align:right;font-size:12px;letter-spacing:0.1em;text-transform:uppercase;padding:0 0 14px;border-bottom:2px solid var(--color-text);">Price</th>
+          </tr>
+        </thead>
+        <tbody>
+          <sc-for list="{{ tiers }}" as="tier" hint-placeholder-count="3">
+            <tr>
+              <td style="padding:22px 16px 22px 0;border-bottom:2px solid var(--color-divider);vertical-align:top;">
+                <div style="font-family:var(--font-heading);font-weight:800;font-size:17px;">{{ tier.name }}</div>
+                <div style="font-size:12px;letter-spacing:0.06em;text-transform:uppercase;color:var(--color-accent-700);margin-top:4px;">{{ tier.tag }}</div>
+              </td>
+              <td style="padding:22px 16px;border-bottom:2px solid var(--color-divider);vertical-align:top;font-size:15px;line-height:1.6;color:var(--color-neutral-800);">{{ tier.features }}</td>
+              <td style="padding:22px 0;border-bottom:2px solid var(--color-divider);vertical-align:top;text-align:right;font-family:var(--font-heading);font-weight:800;font-size:22px;">{{ tier.price }}</td>
+            </tr>
+          </sc-for>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section style="background:var(--color-accent);color:var(--color-bg);padding:{{ posterPad }};border-bottom:2px solid var(--color-text);">
+    <div style="font-size:12px;letter-spacing:0.16em;text-transform:uppercase;opacity:0.8;margin-bottom:24px;">Made one at a time</div>
+    <h2 data-reveal="block" style="font-size:{{ posterSize }};line-height:0.95;letter-spacing:-0.04em;margin:0 0 36px;max-width:18ch;color:var(--color-bg);">The best gift is the one nobody else could have given.</h2>
+    <a href="./Book Builder.dc.html" style="background:var(--color-bg);color:var(--color-accent-700);font-family:var(--font-heading);font-weight:800;font-size:14px;letter-spacing:0.04em;text-transform:uppercase;padding:16px 28px;display:inline-block;" style-hover="background:var(--color-neutral-200);">Start a book</a>
+  </section>
+
+  <footer style="padding:56px 40px 40px;display:grid;grid-template-columns:{{ footerCols }};gap:40px;">
+    <div>
+      <div style="font-family:var(--font-heading);font-weight:800;font-size:20px;letter-spacing:-0.03em;margin-bottom:10px;">farsh<span style="color:var(--color-accent);">!</span></div>
+      <p style="font-size:14px;line-height:1.6;color:var(--color-neutral-700);margin:0;max-width:28ch;">Personalised books for children and for couples, printed and bound to order.</p>
+    </div>
+    <div>
+      <div style="font-size:12px;letter-spacing:0.1em;text-transform:uppercase;color:var(--color-neutral-600);margin-bottom:14px;">Books</div>
+      <div style="display:flex;flex-direction:column;gap:8px;font-size:14px;">
+        <a href="#books" style="color:var(--color-text);">For a child</a>
+        <a href="#books" style="color:var(--color-text);">For a couple</a>
+        <a href="#formats" style="color:var(--color-text);">Gift editions</a>
+      </div>
+    </div>
+    <div>
+      <div style="font-size:12px;letter-spacing:0.1em;text-transform:uppercase;color:var(--color-neutral-600);margin-bottom:14px;">Company</div>
+      <div style="display:flex;flex-direction:column;gap:8px;font-size:14px;">
+        <a href="#" style="color:var(--color-text);">About</a>
+        <a href="#" style="color:var(--color-text);">The bindery</a>
+        <a href="#" style="color:var(--color-text);">Contact</a>
+      </div>
+    </div>
+    <div>
+      <div style="font-size:12px;letter-spacing:0.1em;text-transform:uppercase;color:var(--color-neutral-600);margin-bottom:14px;">Occasional letters</div>
+      <div style="display:flex;gap:0;">
+        <input type="email" placeholder="you@email.com" style="flex:1;min-width:0;padding:12px 14px;border:2px solid var(--color-text);border-right:0;background:transparent;font-family:var(--font-body);font-size:14px;color:var(--color-text);"/>
+        <button style="background:var(--color-text);color:var(--color-bg);border:2px solid var(--color-text);font-family:var(--font-heading);font-weight:800;font-size:13px;letter-spacing:0.06em;text-transform:uppercase;padding:12px 18px;cursor:pointer;" style-hover="background:var(--color-accent);border-color:var(--color-accent);">Join</button>
+      </div>
+    </div>
+  </footer>
+
+  <div style="padding:0 40px 32px;font-size:12px;color:var(--color-neutral-600);">© 2026 Farsh. All rights reserved.</div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;imageTreatment&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Black and white&quot;,&quot;Full colour&quot;],&quot;default&quot;:&quot;Black and white&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Imagery&quot;}}">
+class Component extends DCLogic {
+  state = { mode: 'kids', w: typeof window !== 'undefined' ? window.innerWidth : 1280 };
+
+  componentDidMount() {
+    this.setupReveals();
+    this.setupMotion();
+    this.onResize = () => {
+      cancelAnimationFrame(this.raf);
+      this.raf = requestAnimationFrame(() => this.setState({ w: window.innerWidth }));
+    };
+    window.addEventListener('resize', this.onResize);
+  }
+  componentDidUpdate() { this.setupReveals(); }
+
+  componentWillUnmount() {
+    if (this.onResize) window.removeEventListener('resize', this.onResize);
+    if (this.onScroll) window.removeEventListener('scroll', this.onScroll);
+    if (this.onMove) window.removeEventListener('mousemove', this.onMove);
+    if (this.rafM) cancelAnimationFrame(this.rafM);
+    if (this.io) this.io.disconnect();
+  }
+
+  revealNow(el) {
+    if (el.dataset.revealed) return;
+    el.dataset.revealed = '1';
+    const sibs = el.parentElement ? Array.from(el.parentElement.children).filter((c) => c.dataset.reveal) : [el];
+    const delay = el.dataset.reveal === 'stagger' ? Math.max(0, sibs.indexOf(el)) * 80 : 0;
+    el.style.transition = 'opacity 0.55s ease-out, transform 0.7s cubic-bezier(.16,1,.3,1)';
+    el.style.transitionDelay = delay + 'ms';
+    el.style.opacity = '1';
+    el.style.transform = 'none';
+    el.querySelectorAll('[data-count]').forEach((n) => this.countUp(n, delay));
+    if (this.io) this.io.unobserve(el);
+  }
+
+  revealVisible() {
+    const vh = window.innerHeight;
+    document.querySelectorAll('[data-reveal]:not([data-revealed])').forEach((el) => {
+      if (el.getBoundingClientRect().top < vh * 0.92) this.revealNow(el);
+    });
+  }
+
+  setupReveals() {
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    if (!this.io) {
+      this.io = new IntersectionObserver((entries) => {
+        entries.forEach((e) => { if (e.isIntersecting) this.revealNow(e.target); });
+      }, { threshold: 0.08, rootMargin: '0px 0px -6% 0px' });
+    }
+    document.querySelectorAll('[data-reveal]').forEach((el) => {
+      if (!el.dataset.revealBound) el.querySelectorAll('[data-count]').forEach((n) => { n.dataset.final = n.textContent; });
+      if (el.dataset.revealBound) return;
+      el.dataset.revealBound = '1';
+      el.style.opacity = '0';
+      el.style.transform = el.dataset.reveal === 'stagger' ? 'translateY(34px)' : 'translateY(22px)';
+      this.io.observe(el);
+    });
+    this.revealVisible();
+    if (this.queueFrame) this.queueFrame();
+  }
+
+  setupMotion() {
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    this.pointer = { x: 0, y: 0 };
+
+    const frame = () => {
+      const vh = window.innerHeight;
+      document.querySelectorAll('[data-parallax]').forEach((el) => {
+        const r = el.getBoundingClientRect();
+        if (r.bottom < -200 || r.top > vh + 200) return;
+        const amt = parseFloat(el.dataset.parallax) || 0.1;
+        const centre = r.top + r.height / 2 - vh / 2;
+        const shift = -centre * amt;
+        const px = el.dataset.px || '0';
+        const py = el.dataset.py || '0';
+        el.style.transform = 'translate3d(' + px + 'px,' + (shift + parseFloat(py)) + 'px,0)';
+      });
+      const bar = document.querySelector('[data-progress-bar]');
+      const label = document.querySelector('[data-progress-label]');
+      const rows = Array.from(document.querySelectorAll('#process [data-reveal]'));
+      if (bar && rows.length) {
+        const first = rows[0].getBoundingClientRect();
+        const last = rows[rows.length - 1].getBoundingClientRect();
+        const span = Math.max(1, (last.bottom - first.top) - vh * 0.35);
+        const p = Math.min(1, Math.max(0, (vh * 0.75 - first.top) / span));
+        bar.style.transform = 'scaleX(' + p.toFixed(3) + ')';
+        if (label) {
+          let cur = 1;
+          rows.forEach((row, i) => { if (row.getBoundingClientRect().top < vh * 0.55) cur = i + 1; });
+          label.textContent = '0' + cur + ' / 0' + rows.length;
+        }
+      }
+      this.revealVisible();
+      this.rafM = null;
+    };
+    this.queueFrame = () => { if (!this.rafM) this.rafM = requestAnimationFrame(frame); };
+
+    this.onScroll = () => this.queueFrame();
+    window.addEventListener('scroll', this.onScroll, { passive: true });
+    this.hashTimer = setInterval(() => this.revealVisible(), 400);
+
+    this.onMove = (e) => {
+      document.querySelectorAll('[data-pointer]').forEach((el) => {
+        const host = el.parentElement;
+        if (!host) return;
+        const r = host.getBoundingClientRect();
+        if (r.bottom < 0 || r.top > window.innerHeight) return;
+        const amt = parseFloat(el.dataset.pointer) || 8;
+        const dx = ((e.clientX - (r.left + r.width / 2)) / Math.max(1, r.width / 2)) * amt;
+        const dy = ((e.clientY - (r.top + r.height / 2)) / Math.max(1, r.height / 2)) * amt * 0.5;
+        el.dataset.px = dx.toFixed(2);
+        el.dataset.py = dy.toFixed(2);
+        if (!el.dataset.parallax) el.style.transform = 'translate3d(' + dx.toFixed(2) + 'px,' + dy.toFixed(2) + 'px,0)';
+      });
+      this.queueFrame();
+    };
+    window.addEventListener('mousemove', this.onMove, { passive: true });
+    this.queueFrame();
+  }
+
+  countUp(node, delay) {
+    const target = parseFloat(node.dataset.count);
+    if (!isFinite(target)) return;
+    const dec = parseInt(node.dataset.decimals || '0', 10);
+    const suffix = node.dataset.suffix || '';
+    const final = node.dataset.final || node.textContent;
+    const dur = 1100;
+    const start = performance.now() + delay + 120;
+    const fmt = (v) => (dec ? v.toFixed(1) : Math.round(v).toLocaleString('en-US')) + suffix;
+    const tick = (now) => {
+      const t = Math.min(1, Math.max(0, (now - start) / dur));
+      const e = 1 - Math.pow(1 - t, 3);
+      node.textContent = t >= 1 ? final : fmt(target * e);
+      if (t < 1) requestAnimationFrame(tick);
+    };
+    node.textContent = fmt(0);
+    requestAnimationFrame(tick);
+  }
+
+  renderVals() {
+    const w = this.state.w;
+    const narrow = w < 900;
+    const mid = w < 1180;
+    const kids = this.state.mode === 'kids';
+    const gray = (this.props.imageTreatment ?? 'Black and white') === 'Black and white';
+    const imgFilter = gray ? 'filter:grayscale(1) contrast(1.08);' : '';
+
+    const kidsBooks = [
+      { title: 'The Great Adventure', meta: 'Ages 4–8 · 32 pages', img: 'uploads/covers/great-adventure.jpg' },
+      { title: 'Goodnight, Little One', meta: 'Ages 0–3 · 24 pages', img: 'uploads/covers/goodnight-little-one.jpg' },
+      { title: "Dragon's Cave Quest", meta: 'Ages 5–9 · 40 pages', img: 'uploads/covers/dragons-cave-quest.jpg' },
+      { title: 'Birthday Wish', meta: 'Ages 3–7 · 28 pages', img: 'uploads/covers/birthday-wish.jpg' },
+      { title: 'Under the Sea', meta: 'Ages 4–8 · 32 pages', img: 'uploads/covers/under-the-sea.jpg' },
+    ];
+    const loveBooks = [
+      { title: 'The Year We Met', meta: 'Cloth bound · 48 pages', img: '' },
+      { title: 'Everything Since', meta: 'Cloth bound · 60 pages', img: '' },
+      { title: 'Ordinary Tuesdays', meta: 'Cloth bound · 40 pages', img: '' },
+      { title: 'Letters, Collected', meta: 'Cloth bound · 56 pages', img: '' },
+      { title: 'Ten Years On', meta: 'Cloth bound · 64 pages', img: '' },
+    ];
+    const list = kids ? kidsBooks : loveBooks;
+
+    const tab = (active, dark) => ({
+      padding: narrow ? '32px 28px' : '44px 40px',
+      cursor: 'pointer',
+      borderRight: narrow ? 'none' : '2px solid var(--color-divider)',
+      borderBottom: '2px solid var(--color-divider)',
+      background: active ? (dark ? 'var(--color-text)' : 'var(--color-accent-200)') : 'var(--color-bg)',
+      color: active && dark ? 'var(--color-bg)' : 'var(--color-text)',
+      boxShadow: active ? 'inset 0 4px 0 var(--color-accent)' : 'inset 0 0 0 var(--color-accent)',
+      transition: 'background 0.35s cubic-bezier(.16,1,.3,1), color 0.35s ease, box-shadow 0.35s cubic-bezier(.16,1,.3,1)',
+    });
+
+    return {
+      heroCols: narrow ? 'minmax(0,1fr)' : '1.15fr 1fr',
+      statCols: w < 700 ? 'repeat(2,minmax(0,1fr))' : 'repeat(4,minmax(0,1fr))',
+      modeCols: narrow ? 'minmax(0,1fr)' : 'repeat(2,minmax(0,1fr))',
+      bookCols: w < 700 ? 'repeat(2,minmax(0,1fr))' : 'repeat(3,minmax(0,1fr))',
+      stepCols: narrow ? 'minmax(0,1fr)' : 'repeat(3,minmax(0,1fr))',
+      formatCols: narrow ? 'minmax(0,1fr)' : '0.8fr 1.4fr',
+      footerCols: w < 700 ? 'minmax(0,1fr)' : mid ? 'repeat(2,minmax(0,1fr))' : '1.6fr 1fr 1fr 1.4fr',
+      h1Size: narrow ? '52px' : w < 1200 ? '76px' : '96px',
+      h2Size: narrow ? '32px' : '44px',
+      stepNumSize: narrow ? '48px' : '68px',
+      heroCopyStyle: {
+        padding: narrow ? '56px 28px 48px' : '88px 48px 72px',
+        display: 'flex', flexDirection: 'column', justifyContent: 'center', position: 'relative',
+      },
+      heroRailStyle: {
+        display: narrow ? 'none' : 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px',
+        position: 'absolute', left: '16px', top: '88px', bottom: '72px',
+      },
+      bleedStyle: {
+        position: 'relative', height: narrow ? '42vh' : '62vh', minHeight: narrow ? '260px' : '420px',
+        overflow: 'hidden', background: 'var(--color-neutral-200)', borderBottom: '2px solid var(--color-divider)',
+      },
+      processGrid: {
+        display: 'grid', gridTemplateColumns: narrow ? 'minmax(0,1fr)' : '0.9fr 1.4fr',
+        gap: narrow ? '32px' : '64px', padding: narrow ? '48px 28px 56px' : '80px 48px 88px',
+      },
+      processStickyStyle: narrow ? {} : { position: 'sticky', top: '110px', alignSelf: 'start' },
+      posterSize: narrow ? '38px' : w < 1200 ? '54px' : '66px',
+      posterPad: narrow ? '64px 28px' : '96px 40px',
+      heroImageStyle: {
+        borderLeft: narrow ? 'none' : '2px solid var(--color-divider)',
+        borderTop: narrow ? '2px solid var(--color-divider)' : 'none',
+        minHeight: narrow ? '360px' : '640px',
+        background: 'var(--color-neutral-200)',
+        overflow: 'hidden',
+        position: 'relative',
+      },
+      imgFilter,
+      stats: [
+        { value: '11,400', label: 'Books bound', count: 11400, decimals: 0, suffix: '' },
+        { value: '5 days', label: 'From order to post', count: 5, decimals: 0, suffix: ' days' },
+        { value: '150gsm', label: 'Uncoated stock', count: 150, decimals: 0, suffix: 'gsm' },
+        { value: '4.9 / 5', label: 'From 2,300 readers', count: 4.9, decimals: 1, suffix: ' / 5' },
+      ].map((s, i) => ({
+        ...s,
+        style: {
+          padding: '26px 28px',
+          borderRight: i === 3 ? 'none' : '2px solid var(--color-divider)',
+          borderBottom: w < 700 && i < 2 ? '2px solid var(--color-divider)' : 'none',
+        },
+      })),
+      onPickKids: () => this.setState({ mode: 'kids' }),
+      onPickLove: () => this.setState({ mode: 'love' }),
+      kidsTabStyle: tab(kids, false),
+      loveTabStyle: tab(!kids, true),
+      gallerySectionStyle: { padding: narrow ? '48px 28px 64px' : '64px 40px 80px' },
+      galleryTitle: kids ? 'Adventures they star in' : 'Books for two people',
+      galleryNote: kids ? 'Ages 0 to 10' : 'Hand-bound in cloth',
+      books: list.map((b, i) => {
+        const feature = i === 0 && !narrow;
+        return {
+          ...b,
+          isSlot: feature,
+          isArt: !feature && kids,
+          isType: !feature && !kids,
+          index: '0' + (i + 1) + ' / 0' + list.length,
+          titleSize: feature ? '26px' : '17px',
+          cardStyle: {
+            background: 'var(--color-bg)', color: 'var(--color-text)', display: 'block', textDecoration: 'none',
+            borderRight: '2px solid var(--color-divider)', borderBottom: '2px solid var(--color-divider)',
+            transition: 'background 0.25s ease',
+            gridColumn: feature ? 'span 2' : 'auto',
+          },
+          artStyle: {
+            aspectRatio: feature ? '16 / 11' : '3 / 4',
+            background: 'var(--color-neutral-200)', overflow: 'hidden', position: 'relative',
+          },
+        };
+      }),
+      steps: [
+        { n: '01', title: 'Tell us who it is for',
+ desc: 'A name, a few details, and — if you have one — a photograph to draw from. Five minutes, no account needed.' },
+        { n: '02', title: 'Read it before it prints', desc: 'We write the manuscript and send back the full book. Change any line, any illustration, any dedication.' },
+        { n: '03', title: 'We print and bind it', desc: 'Printed on uncoated stock, cased by hand, and posted in a protective slip. Most orders ship within five days.' },
+      ].map((st, i) => ({
+        ...st,
+        rowStyle: {
+          borderTop: '2px solid var(--color-divider)',
+          borderBottom: i === 2 ? '2px solid var(--color-divider)' : 'none',
+          padding: narrow ? '32px 0' : '44px 0',
+          display: 'grid',
+          gridTemplateColumns: narrow ? 'minmax(0,1fr)' : 'auto minmax(0,1fr)',
+          gap: narrow ? '16px' : '36px',
+          alignItems: 'start',
+        },
+      })),
+      tiers: [
+        { name: 'Softcover', tag: 'Everyday', price: '$29', features: 'Full-colour printing, personalised name and likeness, digital preview before print.' },
+        { name: 'Hardcover', tag: 'Most ordered', price: '$39', features: 'Everything in Softcover, plus a cased hardcover, printed dedication page and thicker stock.' },
+        { name: 'Cloth edition', tag: 'Hand-bound', price: '$89', features: 'Sewn and cased by hand in book cloth, foil-stamped spine, slipcase and archival endpapers.' },
+      ],
+    };
+  }
+}
+</script>
+</body>
+</html>

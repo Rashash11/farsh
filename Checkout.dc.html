@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="_ds/modernist-e9855935-b7ff-4a14-ab9d-08d11d0948a2/styles.css">
+  <script src="_ds/modernist-e9855935-b7ff-4a14-ab9d-08d11d0948a2/_ds_bundle.js"></script>
+  <style>
+    :root {
+      --color-bg: #f5ead8;
+      --color-text: #201e1d;
+      --color-divider: #e2d0b3;
+      --color-accent: #c67139;
+      --color-accent-100: #ffe1d0;
+      --color-accent-200: #ffd3b8;
+      --color-accent-300: #ffc6a5;
+      --color-accent-400: #e08b4f;
+      --color-accent-500: #c67139;
+      --color-accent-600: #b2622d;
+      --color-accent-700: #8c491a;
+      --color-accent-800: #643312;
+      --color-accent-900: #402310;
+      --color-cta: #8c491a;
+      --color-cta-hover: #643312;
+      --color-accent-2-100: #e1eecc;
+      --color-accent-2-200: #d3e4b6;
+      --color-accent-2-700: #3d4a29;
+      --color-accent-2-900: #272e1b;
+      --color-neutral-100: #faf4e9;
+      --color-neutral-200: #eee2cd;
+      --color-neutral-300: #e2d4ba;
+      --color-neutral-500: rgba(32,30,29,0.45);
+      --color-neutral-600: rgba(32,30,29,0.58);
+      --color-neutral-700: rgba(32,30,29,0.68);
+      --color-neutral-800: rgba(32,30,29,0.78);
+      --color-neutral-900: #2e2b25;
+      --shadow-sm: 0 1px 2px rgba(64,35,16,0.12);
+      --shadow-md: 0 6px 18px rgba(64,35,16,0.14);
+      --shadow-lg: 0 18px 44px rgba(64,35,16,0.18);
+      --paper: linear-gradient(135deg, #f9f4ed 0%, #f0e6d3 100%);
+      --wash: radial-gradient(120% 100% at 14% 0%, #ffe1d0 0%, rgba(255,225,208,0) 64%);
+    }
+    body { margin: 0; background: var(--color-bg); color: var(--color-text); font-family: var(--font-body); }
+    a { color: var(--color-accent-700); text-decoration: none; }
+    a:hover { color: var(--color-accent); }
+    input:focus-visible, textarea:focus-visible, button:focus-visible, a:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+    input, textarea { font-family: var(--font-body); }
+    @keyframes riseIn { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+    @keyframes turnPage { from { opacity: 0.15; transform: perspective(1400px) rotateY(-18deg); } to { opacity: 1; transform: none; } }
+    @keyframes wobble { 0%, 100% { transform: rotate(-2.5deg); } 50% { transform: rotate(2.5deg); } }
+    @keyframes beat { 0%, 100% { transform: scale(1); } 14% { transform: scale(1.16); } 28% { transform: scale(1); } 42% { transform: scale(1.1); } }
+    @keyframes driftY { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-7px); } }
+    @keyframes stampIn { from { opacity: 0; transform: rotate(-16deg) scale(1.4); } to { opacity: 1; transform: rotate(-7deg) scale(1); } }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; } }
+  </style>
+</helmet>
+
+<div style="{{ shellStyle }}">
+<div style="max-width:1440px;margin:0 auto;border-left:2px solid var(--color-divider);border-right:2px solid var(--color-divider);min-height:100vh;">
+
+  <nav style="display:flex;align-items:center;justify-content:space-between;gap:20px;padding:16px clamp(16px,3vw,40px);border-bottom:2px solid var(--color-divider);">
+    <div style="display:flex;align-items:baseline;gap:14px;">
+      <a href="./Landing Page.dc.html" style="font-family:var(--font-heading);font-weight:800;font-size:24px;letter-spacing:-0.04em;color:var(--color-text);">farsh<span style="color:var(--color-accent);">!</span></a>
+      <span style="font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:var(--color-neutral-600);">{{ modeLabel }} · order</span>
+    </div>
+    <a href="{{ previewHref }}" style="font-size:12px;letter-spacing:0.1em;text-transform:uppercase;color:var(--color-text);border-bottom:2px solid transparent;transition:border-color .2s ease;" style-hover="border-color:var(--color-accent);">← Back to the proof</a>
+  </nav>
+
+  <sc-if value="{{ placing }}" hint-placeholder-val="{{ true }}">
+    <div style="display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);">
+
+      <div style="padding:clamp(26px,3.4vw,52px) clamp(20px,3vw,44px);border-right:2px solid var(--color-divider);min-width:0;">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+          <span style="{{ markStyle }}" data-mark="{{ audienceKey }}"></span>
+          <span style="font-size:12px;letter-spacing:0.18em;text-transform:uppercase;color:var(--color-accent-700);">Last step</span>
+        </div>
+        <h1 style="font-family:var(--font-heading);font-weight:800;font-size:clamp(30px,4.2vw,56px);line-height:0.94;letter-spacing:-0.042em;margin:0 0 30px;max-width:20ch;">{{ headline }}</h1>
+
+        <div style="font-size:11px;letter-spacing:0.16em;text-transform:uppercase;color:var(--color-neutral-600);margin-bottom:14px;">How it should be bound</div>
+        <div style="display:grid;gap:12px;margin-bottom:34px;">
+          <sc-for list="{{ formats }}" as="f" hint-placeholder-count="3">
+            <button onClick="{{ f.onPick }}" style="{{ f.style }}">
+              <span style="display:block;text-align:left;">
+                <span style="display:block;font-family:var(--font-heading);font-weight:800;font-size:18px;letter-spacing:-0.025em;margin-bottom:5px;">{{ f.title }}</span>
+                <span style="display:block;font-size:13px;line-height:1.5;color:var(--color-neutral-700);">{{ f.blurb }}</span>
+              </span>
+              <span style="display:flex;align-items:center;gap:14px;flex-shrink:0;">
+                <span style="font-family:var(--font-heading);font-weight:800;font-size:19px;letter-spacing:-0.02em;">{{ f.price }}</span>
+                <span style="{{ f.tickStyle }}">✓</span>
+              </span>
+            </button>
+          </sc-for>
+        </div>
+
+        <div style="font-size:11px;letter-spacing:0.16em;text-transform:uppercase;color:var(--color-neutral-600);margin-bottom:14px;">When it should arrive</div>
+        <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:34px;">
+          <sc-for list="{{ speeds }}" as="s" hint-placeholder-count="3">
+            <button onClick="{{ s.onPick }}" style="{{ s.style }}">{{ s.label }}</button>
+          </sc-for>
+        </div>
+
+        <div style="font-size:11px;letter-spacing:0.16em;text-transform:uppercase;color:var(--color-neutral-600);margin-bottom:14px;">Where it goes</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;">
+          <sc-for list="{{ fields }}" as="f" hint-placeholder-count="5">
+            <label style="{{ f.wrapStyle }}">
+              <span style="display:block;font-size:11px;letter-spacing:0.16em;text-transform:uppercase;color:var(--color-neutral-600);margin-bottom:8px;">{{ f.label }}</span>
+              <sc-if value="{{ f.isLong }}" hint-placeholder-val="{{ false }}">
+                <textarea value="{{ f.value }}" onChange="{{ f.onInput }}" placeholder="{{ f.placeholder }}" rows="3" style="width:100%;box-sizing:border-box;padding:13px 14px;border:2px solid var(--color-text);background:var(--color-bg);font-size:15px;line-height:1.5;color:var(--color-text);resize:vertical;"></textarea>
+              </sc-if>
+              <sc-if value="{{ f.isShort }}" hint-placeholder-val="{{ true }}">
+                <input value="{{ f.value }}" onChange="{{ f.onInput }}" placeholder="{{ f.placeholder }}" style="width:100%;box-sizing:border-box;padding:13px 14px;border:2px solid var(--color-text);background:var(--color-bg);font-size:15px;color:var(--color-text);"/>
+              </sc-if>
+            </label>
+          </sc-for>
+        </div>
+
+        <label style="display:flex;align-items:flex-start;gap:12px;margin-top:26px;padding-top:22px;border-top:2px solid var(--color-divider);cursor:pointer;">
+          <button onClick="{{ onToggleGift }}" style="{{ giftBoxStyle }}">✓</button>
+          <span style="display:block;">
+            <span style="display:block;font-family:var(--font-heading);font-weight:800;font-size:15px;letter-spacing:-0.02em;margin-bottom:4px;">{{ giftTitle }}</span>
+            <span style="display:block;font-size:13px;line-height:1.55;color:var(--color-neutral-700);max-width:44ch;">{{ giftBlurb }}</span>
+          </span>
+        </label>
+      </div>
+
+      <div style="{{ summaryPaneStyle }}">
+        <div style="position:sticky;top:24px;display:flex;flex-direction:column;gap:18px;">
+          <div data-cover style="{{ coverStyle }}">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
+              <span style="font-size:10px;letter-spacing:0.2em;text-transform:uppercase;opacity:0.8;">Farsh! · proof approved</span>
+              <span style="{{ coverMarkStyle }}" data-mark="{{ audienceKey }}"></span>
+            </div>
+            <div>
+              <div style="font-family:var(--font-heading);font-weight:800;font-size:clamp(20px,2.4vw,32px);line-height:0.95;letter-spacing:-0.04em;">{{ bookTitle }}</div>
+              <div style="{{ coverRuleStyle }}"></div>
+              <div style="font-size:12px;letter-spacing:0.14em;text-transform:uppercase;opacity:0.9;">{{ names }}</div>
+            </div>
+          </div>
+
+          <div style="border:2px solid var(--color-text);background:var(--color-bg);">
+            <div style="padding:16px 18px;border-bottom:2px solid var(--color-divider);font-size:11px;letter-spacing:0.16em;text-transform:uppercase;color:var(--color-neutral-600);">Order</div>
+            <div style="padding:16px 18px;display:flex;flex-direction:column;gap:11px;">
+              <sc-for list="{{ lines }}" as="l" hint-placeholder-count="4">
+                <div style="display:flex;align-items:baseline;justify-content:space-between;gap:14px;font-size:14px;">
+                  <span style="color:var(--color-neutral-700);">{{ l.k }}</span>
+                  <span style="font-family:var(--font-heading);font-weight:800;letter-spacing:-0.01em;text-align:right;">{{ l.v }}</span>
+                </div>
+              </sc-for>
+            </div>
+            <div style="padding:16px 18px;border-top:2px solid var(--color-text);display:flex;align-items:baseline;justify-content:space-between;gap:14px;">
+              <span style="font-size:12px;letter-spacing:0.14em;text-transform:uppercase;">Total</span>
+              <span style="font-family:var(--font-heading);font-weight:800;font-size:26px;letter-spacing:-0.03em;">{{ total }}</span>
+            </div>
+          </div>
+
+          <button onClick="{{ onPlace }}" style="background:var(--color-cta);color:var(--color-bg);border:2px solid var(--color-cta);font-family:var(--font-heading);font-weight:800;font-size:15px;letter-spacing:0.04em;text-transform:uppercase;padding:18px 26px;cursor:pointer;transition:background .2s ease,letter-spacing .3s ease;" style-hover="background:var(--color-cta-hover);letter-spacing:0.1em;">Place the order</button>
+          <div style="font-size:12px;line-height:1.6;color:var(--color-neutral-700);">{{ reassurance }}</div>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ placed }}" hint-placeholder-val="{{ false }}">
+    <div>
+      <section style="{{ doneStyle }}">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:28px;flex-wrap:wrap;">
+          <div style="min-width:0;">
+            <div style="font-size:12px;letter-spacing:0.18em;text-transform:uppercase;opacity:0.85;margin-bottom:18px;">Order {{ orderNo }}</div>
+            <h1 style="font-family:var(--font-heading);font-weight:800;font-size:clamp(32px,5vw,68px);line-height:0.92;letter-spacing:-0.045em;margin:0 0 20px;max-width:20ch;">{{ doneLine }}</h1>
+            <p style="font-size:17px;line-height:1.6;margin:0;max-width:46ch;opacity:0.92;">{{ doneBlurb }}</p>
+          </div>
+          <div data-sticker data-rot="-7" style="background:var(--color-bg);color:var(--color-accent-700);border:2px solid var(--color-accent-700);font-family:var(--font-heading);font-weight:800;font-size:13px;letter-spacing:0.14em;text-transform:uppercase;padding:14px 18px;box-shadow:var(--shadow-md);transform:rotate(-7deg);animation:stampIn .5s cubic-bezier(.16,1,.3,1) both;">At the bindery</div>
+        </div>
+      </section>
+
+      <section style="padding:clamp(30px,3.4vw,56px) clamp(20px,3vw,44px);border-bottom:2px solid var(--color-divider);">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));border-top:2px solid var(--color-divider);border-left:2px solid var(--color-divider);">
+          <sc-for list="{{ next }}" as="n" hint-placeholder-count="3">
+            <div style="padding:clamp(22px,2.4vw,32px);border-right:2px solid var(--color-divider);border-bottom:2px solid var(--color-divider);">
+              <div style="font-family:var(--font-heading);font-weight:800;font-size:clamp(38px,4.4vw,62px);line-height:0.8;letter-spacing:-0.05em;color:var(--color-accent-300);margin-bottom:18px;">{{ n.no }}</div>
+              <h3 style="font-family:var(--font-heading);font-weight:800;font-size:20px;letter-spacing:-0.025em;margin:0 0 8px;">{{ n.title }}</h3>
+              <p style="font-size:15px;line-height:1.65;margin:0;color:var(--color-neutral-800);">{{ n.body }}</p>
+            </div>
+          </sc-for>
+        </div>
+      </section>
+
+      <section style="padding:clamp(30px,3.4vw,56px) clamp(20px,3vw,44px);display:flex;gap:14px;flex-wrap:wrap;align-items:center;">
+        <a href="./Book Builder.dc.html" style="background:var(--color-cta);color:var(--color-bg);font-family:var(--font-heading);font-weight:800;font-size:14px;letter-spacing:0.04em;text-transform:uppercase;padding:17px 28px;transition:background .2s ease;" style-hover="background:var(--color-cta-hover);">Make another one</a>
+        <a href="./Landing Page.dc.html" style="border:2px solid var(--color-text);color:var(--color-text);font-family:var(--font-heading);font-weight:800;font-size:14px;letter-spacing:0.04em;text-transform:uppercase;padding:15px 24px;transition:background .2s ease,color .2s ease;" style-hover="background:var(--color-text);color:var(--color-bg);">Back to the shop</a>
+      </section>
+    </div>
+  </sc-if>
+
+  <footer style="padding:26px clamp(20px,3vw,44px);border-top:2px solid var(--color-divider);font-size:12px;color:var(--color-neutral-600);">© 2026 Farsh. All rights reserved.</footer>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1280,&quot;height&quot;:900},&quot;playfulCursor&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Play&quot;}}">
+const MARKS = {
+  child: '<svg viewBox="0 0 24 24" width="100%" height="100%" fill="currentColor" aria-hidden="true"><path d="M12 1.6l2.7 7.2 7.3.3-5.8 4.6 2.1 7.4L12 16.7l-6.3 4.4 2.1-7.4L2 9.1l7.3-.3z"/></svg>',
+  couple: '<svg viewBox="0 0 24 24" width="100%" height="100%" fill="currentColor" aria-hidden="true"><path d="M12 21.2S2.6 14.9 2.6 8.9A5.4 5.4 0 0 1 12 5.6a5.4 5.4 0 0 1 9.4 3.3c0 6-9.4 12.3-9.4 12.3z"/></svg>',
+  family: '<svg viewBox="0 0 24 24" width="100%" height="100%" fill="currentColor" aria-hidden="true"><rect x="1" y="1" width="6.6" height="6.6"/><rect x="8.7" y="1" width="6.6" height="6.6" opacity="0.45"/><rect x="16.4" y="1" width="6.6" height="6.6"/><rect x="1" y="8.7" width="6.6" height="6.6" opacity="0.45"/><rect x="8.7" y="8.7" width="6.6" height="6.6"/><rect x="16.4" y="8.7" width="6.6" height="6.6" opacity="0.45"/><rect x="1" y="16.4" width="6.6" height="6.6"/><rect x="8.7" y="16.4" width="6.6" height="6.6" opacity="0.45"/><rect x="16.4" y="16.4" width="6.6" height="6.6"/></svg>',
+};
+
+const THEME = {
+  child: {
+    mode: 'For a child', ground: 'var(--wash), var(--color-bg)', pane: '#ffe1d0',
+    coverBg: '#ffe1d0', coverInk: '#402310', coverEdge: '#402310', doneBg: '#402310',
+    markAnim: 'wobble 2.4s ease-in-out infinite', tilt: '-1.4deg',
+    headline: 'Where should we send it?',
+    formats: [
+      { key: 'soft', title: 'Softcover', blurb: 'Light enough for small hands to carry about.', price: 29 },
+      { key: 'hard', title: 'Hardcover', blurb: 'Board covers, sewn spine, survives being read at bathtime.', price: 39 },
+      { key: 'cloth', title: 'Cloth edition', blurb: 'Book cloth, foil-stamped name on the spine, cased by hand.', price: 69 },
+    ],
+    gift: { title: 'Wrap it and hide the price', blurb: 'Kraft paper, red ribbon, no invoice in the parcel. We can post it straight to them.' },
+    done: 'It is going to the bindery.',
+    doneBlurb: 'You will get a photograph of the printed pages before they are cased in, and tracking the day it is posted.',
+  },
+  couple: {
+    mode: 'For two of you', ground: 'radial-gradient(120% 100% at 86% 0%, #ffe1d0 0%, rgba(255,225,208,0) 66%), var(--color-bg)', pane: '#fff2eb',
+    coverBg: '#643312', coverInk: '#fff2eb', coverEdge: '#402310', doneBg: '#643312',
+    markAnim: 'beat 2.6s ease-in-out infinite', tilt: '0deg',
+    headline: 'Where should the only copy go?',
+    formats: [
+      { key: 'hard', title: 'Hardcover', blurb: 'Pressed type on thick uncoated paper, sewn spine.', price: 59 },
+      { key: 'cloth', title: 'Cloth, hand-bound', blurb: 'Book cloth over board, sewn and cased by one binder.', price: 89 },
+      { key: 'two', title: 'Two copies', blurb: 'One each. Same book, both hand-bound, posted together.', price: 149 },
+    ],
+    gift: { title: 'Keep the parcel quiet', blurb: 'Plain wrap, no branding, and a blank card so you can write it yourself.' },
+    done: 'It is going to the binder.',
+    doneBlurb: 'One person sews and cases it. You will get a photograph before it is wrapped, and tracking when it is posted.',
+  },
+  family: {
+    mode: 'For the whole family', ground: 'radial-gradient(130% 100% at 50% 0%, #e1eecc 0%, rgba(225,238,204,0) 70%), var(--color-bg)', pane: '#f2f7e6',
+    coverBg: '#e1eecc', coverInk: '#272e1b', coverEdge: '#272e1b', doneBg: '#272e1b',
+    markAnim: 'driftY 4s ease-in-out infinite', tilt: '-0.6deg',
+    headline: 'Where should we send them?',
+    formats: [
+      { key: 'hard', title: 'One hardcover', blurb: 'For the table it was written about.', price: 49 },
+      { key: 'three', title: 'Three copies', blurb: 'One for the house, two for whoever asks first.', price: 119 },
+      { key: 'six', title: 'Six copies', blurb: 'Enough for the whole table, posted in one box or several.', price: 219 },
+    ],
+    gift: { title: 'Post copies to different addresses', blurb: 'Give us the list and we send each one separately, with a note in each.' },
+    done: 'It is going to the bindery.',
+    doneBlurb: 'Every copy is printed from the same approved proof. You will get a photograph before they are cased in.',
+  },
+};
+
+class Component extends DCLogic {
+  state = {
+    audience: 'child', format: 1, speed: 'Standard · 5 days', gift: false,
+    placed: false, order: '', book: null, ship: {},
+  };
+
+  componentDidMount() {
+    let book = null;
+    try { book = JSON.parse(localStorage.getItem('farsh.book') || 'null'); } catch (e) {}
+    const q = new URLSearchParams(location.search).get('for');
+    const audience = ['child', 'couple', 'family'].indexOf(q) > -1 ? q : ((book && book.audience) || 'child');
+    this.setState({ audience, book, format: audience === 'child' ? 1 : 0 });
+    this.bindAll();
+    this.setupCursor();
+  }
+  componentDidUpdate() { this.bindAll(); }
+  componentWillUnmount() {
+    if (this.onMove) window.removeEventListener('mousemove', this.onMove);
+    if (this.ring && this.ring.parentNode) this.ring.parentNode.removeChild(this.ring);
+    if (this.rafC) cancelAnimationFrame(this.rafC);
+  }
+
+  reduced() { return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches; }
+
+  bindAll() { this.paintMarks(); this.setupStickers(); }
+
+  paintMarks() {
+    document.querySelectorAll('[data-mark]').forEach((el) => {
+      const key = el.getAttribute('data-mark');
+      const svg = MARKS[key] || MARKS.child;
+      if (el.dataset.painted !== key) { el.innerHTML = svg; el.dataset.painted = key; }
+    });
+  }
+
+  setupStickers() {
+    document.querySelectorAll('[data-sticker]').forEach((el) => {
+      if (el.dataset.dragBound) return;
+      el.dataset.dragBound = '1';
+      const rot = el.dataset.rot || '0';
+      Object.assign(el.style, { touchAction: 'none', cursor: 'grab', userSelect: 'none' });
+      let sx = 0, sy = 0, ox = 0, oy = 0, dragging = false;
+      el.addEventListener('pointerdown', (e) => {
+        dragging = true;
+        try { el.setPointerCapture(e.pointerId); } catch (err) {}
+        sx = e.clientX; sy = e.clientY;
+        ox = parseFloat(el.dataset.dx || '0'); oy = parseFloat(el.dataset.dy || '0');
+        el.style.cursor = 'grabbing'; el.style.zIndex = '60';
+        el.style.animation = 'none'; el.style.transition = 'none';
+        e.preventDefault();
+      });
+      el.addEventListener('pointermove', (e) => {
+        if (!dragging) return;
+        const dx = ox + (e.clientX - sx), dy = oy + (e.clientY - sy);
+        el.dataset.dx = String(dx); el.dataset.dy = String(dy);
+        el.style.transform = 'translate3d(' + dx + 'px,' + dy + 'px,0) rotate(' + rot + 'deg)';
+      });
+      const end = () => { if (!dragging) return; dragging = false; el.style.cursor = 'grab'; el.style.transition = 'transform .3s cubic-bezier(.16,1,.3,1)'; };
+      el.addEventListener('pointerup', end);
+      el.addEventListener('pointercancel', end);
+    });
+  }
+
+  setupCursor() {
+    if ((this.props.playfulCursor ?? true) === false || this.reduced()) return;
+    if (!(window.matchMedia && window.matchMedia('(hover: hover)').matches)) return;
+    const ring = document.createElement('div');
+    ring.setAttribute('aria-hidden', 'true');
+    Object.assign(ring.style, {
+      position: 'fixed', left: '0', top: '0', width: '24px', height: '24px',
+      border: '2px solid var(--color-accent)', boxSizing: 'border-box', pointerEvents: 'none',
+      zIndex: '9999', opacity: '0', transform: 'translate(-50%,-50%)', mixBlendMode: 'multiply',
+      transition: 'width .18s ease, height .18s ease, background .18s ease, opacity .3s ease',
+    });
+    document.body.appendChild(ring);
+    this.ring = ring;
+    const pos = { x: 0, y: 0 }, target = { x: 0, y: 0 };
+    let active = false;
+    const tick = () => {
+      pos.x += (target.x - pos.x) * 0.22; pos.y += (target.y - pos.y) * 0.22;
+      ring.style.left = pos.x.toFixed(1) + 'px'; ring.style.top = pos.y.toFixed(1) + 'px';
+      this.rafC = (Math.abs(target.x - pos.x) > 0.4 || Math.abs(target.y - pos.y) > 0.4) ? requestAnimationFrame(tick) : null;
+    };
+    this.onMove = (e) => {
+      target.x = e.clientX; target.y = e.clientY;
+      ring.style.opacity = '1';
+      const hot = e.target && e.target.closest && e.target.closest('a,button,input,textarea,[data-sticker],[data-cover]');
+      if (!!hot !== active) {
+        active = !!hot;
+        ring.style.width = active ? '44px' : '24px';
+        ring.style.height = active ? '44px' : '24px';
+        ring.style.background = active ? 'color-mix(in srgb, var(--color-accent) 16%, transparent)' : 'transparent';
+      }
+      if (!this.rafC) this.rafC = requestAnimationFrame(tick);
+    };
+    window.addEventListener('mousemove', this.onMove, { passive: true });
+  }
+
+  ship(key, val) { this.setState({ ship: { ...this.state.ship, [key]: val } }); }
+
+  money(n) { return '$' + n; }
+
+  renderVals() {
+    const a = this.state.audience;
+    const t = THEME[a];
+    const b = this.state.book || {};
+    const fmt = t.formats[Math.min(this.state.format, t.formats.length - 1)];
+    const speedCost = { 'Standard · 5 days': 0, 'Next week · 8 days': 0, 'Rush · 3 days': 15 };
+    const shipCost = speedCost[this.state.speed] || 0;
+    const giftCost = this.state.gift ? 6 : 0;
+    const total = fmt.price + shipCost + giftCost;
+
+    const names = b.names || { child: 'Amara', couple: 'Noor & Sami', family: 'The Haddads' }[a];
+    const title = b.title || { child: 'Amara and the door in the garden wall', couple: 'The Long Way Round', family: 'The Whole Lot of Us' }[a];
+
+    const chip = (on) => ({
+      padding: '12px 16px', cursor: 'pointer',
+      background: on ? 'var(--color-cta)' : 'transparent',
+      color: on ? 'var(--color-bg)' : 'var(--color-text)',
+      border: '2px solid ' + (on ? 'var(--color-cta)' : 'var(--color-text)'),
+      fontFamily: 'var(--font-heading)', fontWeight: '800', fontSize: '12px',
+      letterSpacing: '0.1em', textTransform: 'uppercase',
+      transition: 'background .2s ease, color .2s ease, border-color .2s ease',
+    });
+
+    const shipFields = [
+      { k: 'who', label: 'Who receives it', ph: 'Full name' },
+      { k: 'email', label: 'Email for the proof photograph', ph: 'you@email.com' },
+      { k: 'address', label: 'Address', ph: 'Street, city, postcode', long: true },
+      { k: 'note', label: a === 'child' ? 'Note on the card' : 'Note on the card (optional)', ph: 'Happy birthday, from all of us', long: true },
+    ];
+
+    return {
+      shellStyle: { background: this.state.placed ? 'var(--color-bg)' : t.ground, transition: 'background .5s ease' },
+      modeLabel: t.mode,
+      audienceKey: a,
+      placing: !this.state.placed,
+      placed: this.state.placed,
+      markStyle: { width: '26px', height: '26px', display: 'block', color: 'var(--color-accent)', animation: this.reduced() ? 'none' : t.markAnim },
+      headline: t.headline,
+
+      formats: t.formats.map((f, i) => {
+        const on = i === this.state.format;
+        return {
+          title: f.title, blurb: f.blurb, price: this.money(f.price),
+          onPick: () => this.setState({ format: i }),
+          style: {
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '20px',
+            appearance: 'none', cursor: 'pointer', width: '100%', boxSizing: 'border-box', padding: '18px 20px',
+            background: on ? 'var(--color-accent-100)' : 'var(--color-bg)',
+            border: '2px solid ' + (on ? 'var(--color-cta)' : 'var(--color-text)'),
+            color: 'var(--color-text)', fontFamily: 'var(--font-body)',
+            transform: on ? 'translateX(4px)' : 'none',
+            transition: 'background .2s ease, border-color .2s ease, transform .25s cubic-bezier(.16,1,.3,1)',
+          },
+          tickStyle: {
+            fontFamily: 'var(--font-heading)', fontWeight: '800', fontSize: '18px',
+            color: 'var(--color-accent)', opacity: on ? '1' : '0', transition: 'opacity .2s ease',
+          },
+        };
+      }),
+
+      speeds: ['Standard · 5 days', 'Next week · 8 days', 'Rush · 3 days'].map((label) => ({
+        label, style: chip(label === this.state.speed), onPick: () => this.setState({ speed: label }),
+      })),
+
+      fields: shipFields.map((f) => ({
+        label: f.label, placeholder: f.ph, value: this.state.ship[f.k] || '',
+        isLong: !!f.long, isShort: !f.long,
+        wrapStyle: { display: 'block', gridColumn: f.long ? '1 / -1' : 'auto' },
+        onInput: (e) => this.ship(f.k, e.target.value),
+      })),
+
+      giftTitle: t.gift.title,
+      giftBlurb: t.gift.blurb,
+      onToggleGift: () => this.setState({ gift: !this.state.gift }),
+      giftBoxStyle: {
+        width: '26px', height: '26px', flexShrink: '0', cursor: 'pointer',
+        border: '2px solid ' + (this.state.gift ? 'var(--color-cta)' : 'var(--color-text)'),
+        background: this.state.gift ? 'var(--color-cta)' : 'transparent',
+        color: this.state.gift ? 'var(--color-bg)' : 'transparent',
+        fontFamily: 'var(--font-heading)', fontWeight: '800', fontSize: '14px', lineHeight: '1',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0',
+        transition: 'background .2s ease, border-color .2s ease, color .2s ease',
+      },
+
+      summaryPaneStyle: {
+        background: t.pane, padding: 'clamp(22px,2.6vw,40px) clamp(20px,2.4vw,36px)',
+        minWidth: '0', transition: 'background .5s ease',
+      },
+      coverStyle: {
+        aspectRatio: '3/4', padding: 'clamp(18px,2vw,26px)', boxSizing: 'border-box',
+        display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
+        background: t.coverBg, color: t.coverInk,
+        border: '2px solid ' + t.coverEdge,
+        transform: 'rotate(' + t.tilt + ')', boxShadow: 'var(--shadow-md)',
+        transition: 'background .5s ease, color .5s ease',
+      },
+      coverMarkStyle: {
+        width: '24px', height: '24px', display: 'block', color: 'currentColor', opacity: '0.85',
+        animation: this.reduced() ? 'none' : t.markAnim,
+      },
+      coverRuleStyle: { height: '2px', margin: '12px 0', background: 'currentColor', opacity: '0.9' },
+      bookTitle: title,
+      names,
+
+      lines: [
+        { k: fmt.title, v: this.money(fmt.price) },
+        { k: 'Postage · ' + this.state.speed.split(' · ')[0], v: shipCost ? this.money(shipCost) : 'Included' },
+        { k: 'Gift wrap', v: this.state.gift ? this.money(giftCost) : '—' },
+        { k: 'Proof', v: 'Approved' },
+      ],
+      total: this.money(total),
+      reassurance: 'We print from the proof you approved. If a name is wrong when it arrives, we reprint it and you pay nothing.',
+
+      onPlace: () => {
+        const no = 'FA-' + String(Math.floor(1000 + Math.random() * 8999));
+        this.setState({ placed: true, order: no });
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      },
+
+      orderNo: this.state.order || 'FA-0000',
+      doneStyle: {
+        background: t.doneBg, color: a === 'family' ? '#f2f7e6' : '#fff2eb',
+        padding: 'clamp(36px,4.6vw,80px) clamp(20px,3vw,44px)',
+        borderBottom: '2px solid var(--color-accent-900)',
+        animation: this.reduced() ? 'none' : 'turnPage .6s cubic-bezier(.16,1,.3,1)',
+      },
+      doneLine: t.done,
+      doneBlurb: t.doneBlurb,
+      next: [
+        { no: '01', title: 'Proof photograph', body: 'Within two days we send a photograph of the printed sheets before they are cased in.' },
+        { no: '02', title: 'Binding', body: 'Sewn, cased and pressed overnight. The cloth editions are done by one binder, by hand.' },
+        { no: '03', title: 'Posted', body: 'Wrapped in a protective slip with tracking. ' + this.state.speed.split(' · ')[1] + ' from today.' },
+      ],
+      previewHref: './Book Preview.dc.html?for=' + a,
+    };
+  }
+}
+</script>
+</body>
+</html>

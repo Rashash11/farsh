@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="_ds/modernist-e9855935-b7ff-4a14-ab9d-08d11d0948a2/styles.css">
+  <script src="_ds/modernist-e9855935-b7ff-4a14-ab9d-08d11d0948a2/_ds_bundle.js"></script>
+  <style>
+    :root {
+      --color-bg: #f5ead8;
+      --color-text: #201e1d;
+      --color-divider: #e2d0b3;
+      --color-accent: #c67139;
+      --color-accent-100: #ffe1d0;
+      --color-accent-200: #ffd3b8;
+      --color-accent-300: #ffc6a5;
+      --color-accent-400: #e08b4f;
+      --color-accent-500: #c67139;
+      --color-accent-600: #b2622d;
+      --color-accent-700: #8c491a;
+      --color-accent-800: #643312;
+      --color-accent-900: #402310;
+      --color-cta: #8c491a;
+      --color-cta-hover: #643312;
+      --color-accent-2-100: #e1eecc;
+      --color-accent-2-200: #d3e4b6;
+      --color-accent-2-700: #3d4a29;
+      --color-accent-2-900: #272e1b;
+      --color-neutral-100: #faf4e9;
+      --color-neutral-200: #eee2cd;
+      --color-neutral-300: #e2d4ba;
+      --color-neutral-500: rgba(32,30,29,0.45);
+      --color-neutral-600: rgba(32,30,29,0.58);
+      --color-neutral-700: rgba(32,30,29,0.68);
+      --color-neutral-800: rgba(32,30,29,0.78);
+      --color-neutral-900: #2e2b25;
+      --shadow-sm: 0 1px 2px rgba(64,35,16,0.12);
+      --shadow-md: 0 6px 18px rgba(64,35,16,0.14);
+      --shadow-lg: 0 18px 44px rgba(64,35,16,0.18);
+      --paper: linear-gradient(135deg, #f9f4ed 0%, #f0e6d3 100%);
+      --wash: radial-gradient(120% 100% at 14% 0%, #ffe1d0 0%, rgba(255,225,208,0) 64%);
+    }
+    body { margin: 0; background: var(--color-bg); color: var(--color-text); font-family: var(--font-body); }
+    a { color: var(--color-accent-700); text-decoration: none; }
+    a:hover { color: var(--color-accent); }
+    input:focus-visible, textarea:focus-visible, button:focus-visible, a:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+    input, textarea { font-family: var(--font-body); }
+    @keyframes riseIn { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+    @keyframes drawIn { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+    @keyframes turnPage { from { opacity: 0.15; transform: perspective(1400px) rotateY(-20deg); } to { opacity: 1; transform: none; } }
+    @keyframes wobble { 0%, 100% { transform: rotate(-2.5deg); } 50% { transform: rotate(2.5deg); } }
+    @keyframes beat { 0%, 100% { transform: scale(1); } 14% { transform: scale(1.16); } 28% { transform: scale(1); } 42% { transform: scale(1.1); } }
+    @keyframes driftY { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-7px); } }
+    @keyframes stampIn { from { opacity: 0; transform: rotate(-14deg) scale(1.3); } to { opacity: 1; transform: rotate(-6deg) scale(1); } }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; } }
+  </style>
+</helmet>
+
+<div style="{{ shellStyle }}">
+<div style="max-width:1440px;margin:0 auto;border-left:2px solid var(--color-divider);border-right:2px solid var(--color-divider);min-height:100vh;">
+
+  <nav style="display:flex;align-items:center;justify-content:space-between;gap:20px;padding:16px clamp(16px,3vw,40px);border-bottom:2px solid var(--color-divider);">
+    <div style="display:flex;align-items:baseline;gap:14px;">
+      <a href="./Landing Page.dc.html" style="font-family:var(--font-heading);font-weight:800;font-size:24px;letter-spacing:-0.04em;color:var(--color-text);">farsh<span style="color:var(--color-accent);">!</span></a>
+      <span style="font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:var(--color-neutral-600);">{{ modeLabel }}</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:20px;">
+      <span style="font-size:12px;letter-spacing:0.12em;text-transform:uppercase;color:var(--color-neutral-600);">Step {{ stepNo }} of 4</span>
+      <a href="./Landing Page.dc.html" style="font-size:12px;letter-spacing:0.1em;text-transform:uppercase;color:var(--color-text);border-bottom:2px solid transparent;transition:border-color .2s ease;" style-hover="border-color:var(--color-accent);">Leave</a>
+    </div>
+  </nav>
+
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);border-bottom:2px solid var(--color-divider);">
+    <sc-for list="{{ steps }}" as="st" hint-placeholder-count="4">
+      <button onClick="{{ st.onGo }}" style="{{ st.style }}">
+        <span style="display:block;font-family:var(--font-heading);font-weight:800;font-size:12px;letter-spacing:0.14em;margin-bottom:6px;">{{ st.no }}</span>
+        <span style="display:block;font-size:13px;letter-spacing:0.04em;text-transform:uppercase;">{{ st.label }}</span>
+        <span style="{{ st.barStyle }}"></span>
+      </button>
+    </sc-for>
+  </div>
+
+  <div style="display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);">
+
+    <div data-panel style="padding:clamp(26px,3.4vw,52px) clamp(20px,3vw,44px) clamp(30px,3.4vw,48px);border-right:2px solid var(--color-divider);min-width:0;">
+
+      <sc-if value="{{ isStep1 }}" hint-placeholder-val="{{ true }}">
+        <div>
+          <div style="font-size:12px;letter-spacing:0.18em;text-transform:uppercase;color:var(--color-accent-700);margin-bottom:12px;">Start here</div>
+          <h1 style="font-family:var(--font-heading);font-weight:800;font-size:clamp(30px,4vw,54px);line-height:0.94;letter-spacing:-0.04em;margin:0 0 14px;max-width:20ch;">Who is this book for?</h1>
+          <p style="font-size:16px;line-height:1.6;color:var(--color-neutral-700);margin:0 0 30px;max-width:44ch;">The answer changes the whole book: how it is written, how it is drawn, and how this page looks from here on.</p>
+          <div style="display:grid;gap:14px;">
+            <sc-for list="{{ audienceCards }}" as="a" hint-placeholder-count="3">
+              <button onClick="{{ a.onPick }}" style="{{ a.style }}">
+                <span style="{{ a.markStyle }}" data-mark="{{ a.key }}"></span>
+                <span style="display:block;text-align:left;">
+                  <span style="display:block;font-family:var(--font-heading);font-weight:800;font-size:clamp(19px,2vw,25px);letter-spacing:-0.03em;margin-bottom:6px;">{{ a.title }}</span>
+                  <span style="display:block;font-size:14px;line-height:1.55;color:var(--color-neutral-700);">{{ a.blurb }}</span>
+                </span>
+                <span style="{{ a.tickStyle }}">✓</span>
+              </button>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isStep2 }}" hint-placeholder-val="{{ false }}">
+        <div>
+          <div style="font-size:12px;letter-spacing:0.18em;text-transform:uppercase;color:var(--color-accent-700);margin-bottom:12px;">{{ detailKicker }}</div>
+          <h1 style="font-family:var(--font-heading);font-weight:800;font-size:clamp(30px,4vw,54px);line-height:0.94;letter-spacing:-0.04em;margin:0 0 14px;max-width:20ch;">{{ detailTitle }}</h1>
+          <p style="font-size:16px;line-height:1.6;color:var(--color-neutral-700);margin:0 0 30px;max-width:46ch;">{{ detailBlurb }}</p>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:18px;">
+            <sc-for list="{{ fields }}" as="f" hint-placeholder-count="5">
+              <label style="{{ f.wrapStyle }}">
+                <span style="display:block;font-size:11px;letter-spacing:0.16em;text-transform:uppercase;color:var(--color-neutral-600);margin-bottom:8px;">{{ f.label }}</span>
+                <sc-if value="{{ f.isLong }}" hint-placeholder-val="{{ false }}">
+                  <textarea value="{{ f.value }}" onChange="{{ f.onInput }}" placeholder="{{ f.placeholder }}" rows="3" style="width:100%;box-sizing:border-box;padding:13px 14px;border:2px solid var(--color-text);background:var(--color-bg);font-size:15px;line-height:1.5;color:var(--color-text);resize:vertical;"></textarea>
+                </sc-if>
+                <sc-if value="{{ f.isShort }}" hint-placeholder-val="{{ true }}">
+                  <input value="{{ f.value }}" onChange="{{ f.onInput }}" placeholder="{{ f.placeholder }}" style="width:100%;box-sizing:border-box;padding:13px 14px;border:2px solid var(--color-text);background:var(--color-bg);font-size:15px;color:var(--color-text);"/>
+                </sc-if>
+              </label>
+            </sc-for>
+          </div>
+          <div style="margin-top:26px;padding-top:22px;border-top:2px solid var(--color-divider);">
+            <div style="font-size:11px;letter-spacing:0.16em;text-transform:uppercase;color:var(--color-neutral-600);margin-bottom:12px;">{{ tagsLabel }}</div>
+            <div style="display:flex;flex-wrap:wrap;gap:10px;">
+              <sc-for list="{{ tags }}" as="t" hint-placeholder-count="6">
+                <button onClick="{{ t.onToggle }}" style="{{ t.style }}">{{ t.label }}</button>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isStep3 }}" hint-placeholder-val="{{ false }}">
+        <div>
+          <div style="font-size:12px;letter-spacing:0.18em;text-transform:uppercase;color:var(--color-accent-700);margin-bottom:12px;">Look and feel</div>
+          <h1 style="font-family:var(--font-heading);font-weight:800;font-size:clamp(30px,4vw,54px);line-height:0.94;letter-spacing:-0.04em;margin:0 0 14px;max-width:20ch;">Pick a direction</h1>
+          <p style="font-size:16px;line-height:1.6;color:var(--color-neutral-700);margin:0 0 30px;max-width:46ch;">Three ways to draw and set the same story. You can change this later, before anything prints.</p>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;">
+            <sc-for list="{{ directions }}" as="d" hint-placeholder-count="3">
+              <button onClick="{{ d.onPick }}" style="{{ d.style }}">
+                <span style="{{ d.swatchStyle }}">
+                  <span style="{{ d.swatchInner }}"></span>
+                </span>
+                <span style="display:block;font-family:var(--font-heading);font-weight:800;font-size:17px;letter-spacing:-0.02em;margin:14px 0 6px;text-align:left;">{{ d.title }}</span>
+                <span style="display:block;font-size:13px;line-height:1.5;color:var(--color-neutral-700);text-align:left;">{{ d.blurb }}</span>
+              </button>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isStep4 }}" hint-placeholder-val="{{ false }}">
+        <div>
+          <div style="font-size:12px;letter-spacing:0.18em;text-transform:uppercase;color:var(--color-accent-700);margin-bottom:12px;">Last bit</div>
+          <h1 style="font-family:var(--font-heading);font-weight:800;font-size:clamp(30px,4vw,54px);line-height:0.94;letter-spacing:-0.04em;margin:0 0 14px;max-width:20ch;">The cover and the dedication</h1>
+          <p style="font-size:16px;line-height:1.6;color:var(--color-neutral-700);margin:0 0 26px;max-width:46ch;">Choose a title. The cover on the right is typeset as you pick.</p>
+          <div style="display:grid;gap:12px;margin-bottom:28px;">
+            <sc-for list="{{ titles }}" as="t" hint-placeholder-count="3">
+              <button onClick="{{ t.onPick }}" style="{{ t.style }}">
+                <span style="display:block;font-family:var(--font-heading);font-weight:800;font-size:clamp(17px,1.8vw,22px);line-height:1.1;letter-spacing:-0.03em;text-align:left;">{{ t.text }}</span>
+                <span style="{{ t.tickStyle }}">✓</span>
+              </button>
+            </sc-for>
+          </div>
+          <label style="display:block;max-width:52ch;">
+            <span style="display:block;font-size:11px;letter-spacing:0.16em;text-transform:uppercase;color:var(--color-neutral-600);margin-bottom:8px;">Dedication, printed on page one</span>
+            <textarea value="{{ dedication }}" onChange="{{ onDedication }}" rows="3" placeholder="{{ dedicationHint }}" style="width:100%;box-sizing:border-box;padding:13px 14px;border:2px solid var(--color-text);background:var(--color-bg);font-size:15px;line-height:1.5;color:var(--color-text);resize:vertical;"></textarea>
+          </label>
+        </div>
+      </sc-if>
+
+    </div>
+
+    <div style="{{ previewPaneStyle }}">
+      <div style="position:sticky;top:24px;display:flex;flex-direction:column;gap:18px;">
+        <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;">
+          <span style="font-size:11px;letter-spacing:0.16em;text-transform:uppercase;color:var(--color-neutral-600);">Your cover, so far</span>
+          <span style="font-size:11px;letter-spacing:0.16em;text-transform:uppercase;color:var(--color-accent-700);">{{ directionLabel }}</span>
+        </div>
+
+        <div data-cover-card style="{{ coverStyle }}">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
+            <span style="font-size:10px;letter-spacing:0.2em;text-transform:uppercase;opacity:0.8;">Farsh! · made to order</span>
+            <span style="{{ coverMarkStyle }}" data-mark="{{ audienceKey }}"></span>
+          </div>
+          <div>
+            <div style="font-family:var(--font-heading);font-weight:800;font-size:clamp(24px,2.9vw,40px);line-height:0.94;letter-spacing:-0.04em;">{{ coverTitle }}</div>
+            <div style="{{ coverRuleStyle }}"></div>
+            <div style="font-size:12px;letter-spacing:0.14em;text-transform:uppercase;opacity:0.9;">{{ coverNames }}</div>
+          </div>
+        </div>
+
+        <div style="border:2px solid var(--color-text);background:var(--color-bg);padding:18px;">
+          <div style="font-size:11px;letter-spacing:0.16em;text-transform:uppercase;color:var(--color-neutral-600);margin-bottom:12px;">In this book</div>
+          <div style="display:flex;flex-direction:column;gap:9px;">
+            <sc-for list="{{ summary }}" as="s" hint-placeholder-count="4">
+              <div style="display:flex;align-items:baseline;justify-content:space-between;gap:14px;font-size:14px;">
+                <span style="color:var(--color-neutral-600);letter-spacing:0.04em;text-transform:uppercase;font-size:11px;">{{ s.k }}</span>
+                <span style="font-family:var(--font-heading);font-weight:800;letter-spacing:-0.01em;text-align:right;">{{ s.v }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+
+        <div data-sticker data-rot="-7" style="align-self:flex-start;background:var(--color-cta);color:var(--color-bg);font-family:var(--font-heading);font-weight:800;font-size:12px;letter-spacing:0.12em;text-transform:uppercase;padding:10px 14px;box-shadow:var(--shadow-md);transform:rotate(-7deg);animation:stampIn .5s cubic-bezier(.16,1,.3,1) both;">{{ stickerLine }}</div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;padding:20px clamp(20px,3vw,44px);border-top:2px solid var(--color-divider);background:var(--color-bg);">
+    <button onClick="{{ onBack }}" style="{{ backStyle }}">← Back</button>
+    <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+      <span style="font-size:12px;letter-spacing:0.1em;text-transform:uppercase;color:var(--color-neutral-600);">{{ hint }}</span>
+      <sc-if value="{{ isStep4 }}" hint-placeholder-val="{{ false }}">
+        <a href="{{ previewHref }}" style="background:var(--color-cta);color:var(--color-bg);font-family:var(--font-heading);font-weight:800;font-size:14px;letter-spacing:0.04em;text-transform:uppercase;padding:16px 28px;transition:background .2s ease,letter-spacing .3s ease;" style-hover="background:var(--color-cta-hover);letter-spacing:0.1em;">Read the whole book →</a>
+      </sc-if>
+      <sc-if value="{{ notLast }}" hint-placeholder-val="{{ true }}">
+        <button onClick="{{ onNext }}" style="background:var(--color-cta);color:var(--color-bg);border:2px solid var(--color-cta);font-family:var(--font-heading);font-weight:800;font-size:14px;letter-spacing:0.04em;text-transform:uppercase;padding:15px 28px;cursor:pointer;transition:background .2s ease,letter-spacing .3s ease;" style-hover="background:var(--color-cta-hover);letter-spacing:0.1em;">Next step →</button>
+      </sc-if>
+    </div>
+  </div>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1280,&quot;height&quot;:900},&quot;startAudience&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;child&quot;,&quot;couple&quot;,&quot;family&quot;],&quot;default&quot;:&quot;child&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Flow&quot;},&quot;playfulCursor&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Play&quot;},&quot;stickers&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Play&quot;}}">
+const MARKS = {
+  child: '<svg viewBox="0 0 24 24" width="100%" height="100%" fill="currentColor" aria-hidden="true"><path d="M12 1.6l2.7 7.2 7.3.3-5.8 4.6 2.1 7.4L12 16.7l-6.3 4.4 2.1-7.4L2 9.1l7.3-.3z"/></svg>',
+  couple: '<svg viewBox="0 0 24 24" width="100%" height="100%" fill="currentColor" aria-hidden="true"><path d="M12 21.2S2.6 14.9 2.6 8.9A5.4 5.4 0 0 1 12 5.6a5.4 5.4 0 0 1 9.4 3.3c0 6-9.4 12.3-9.4 12.3z"/></svg>',
+  family: '<svg viewBox="0 0 24 24" width="100%" height="100%" fill="currentColor" aria-hidden="true"><rect x="1" y="1" width="6.6" height="6.6"/><rect x="8.7" y="1" width="6.6" height="6.6" opacity="0.45"/><rect x="16.4" y="1" width="6.6" height="6.6"/><rect x="1" y="8.7" width="6.6" height="6.6" opacity="0.45"/><rect x="8.7" y="8.7" width="6.6" height="6.6"/><rect x="16.4" y="8.7" width="6.6" height="6.6" opacity="0.45"/><rect x="1" y="16.4" width="6.6" height="6.6"/><rect x="8.7" y="16.4" width="6.6" height="6.6" opacity="0.45"/><rect x="16.4" y="16.4" width="6.6" height="6.6"/></svg>',
+};
+
+const THEME = {
+  child: {
+    mode: 'For a child', ground: 'var(--wash), var(--color-bg)', pane: '#ffe1d0',
+    coverBg: '#ffe1d0', coverInk: '#402310', coverEdge: '#402310',
+    markAnim: 'wobble 2.4s ease-in-out infinite', tilt: '-1.4deg',
+    sticker: 'Ages 3–10', hintWord: 'story',
+  },
+  couple: {
+    mode: 'For two of you', ground: 'radial-gradient(120% 100% at 86% 0%, #ffe1d0 0%, rgba(255,225,208,0) 66%), var(--color-bg)', pane: '#fff2eb',
+    coverBg: '#643312', coverInk: '#fff2eb', coverEdge: '#402310',
+    markAnim: 'beat 2.6s ease-in-out infinite', tilt: '0deg',
+    sticker: 'Hand-bound in cloth', hintWord: 'love story',
+  },
+  family: {
+    mode: 'For the whole family', ground: 'radial-gradient(130% 100% at 50% 0%, #e1eecc 0%, rgba(225,238,204,0) 70%), var(--color-bg)', pane: '#f2f7e6',
+    coverBg: '#e1eecc', coverInk: '#272e1b', coverEdge: '#272e1b',
+    markAnim: 'driftY 4s ease-in-out infinite', tilt: '-0.6deg',
+    sticker: 'One page each', hintWord: 'family book',
+  },
+};
+
+const FIELDS = {
+  child: [
+    { k: 'name', label: 'Their name', ph: 'Amara' },
+    { k: 'age', label: 'How old', ph: '5' },
+    { k: 'looks', label: 'What they look like', ph: 'Curly hair, glasses' },
+    { k: 'loves', label: 'The thing they will not stop talking about', ph: 'Dinosaurs', long: true },
+  ],
+  couple: [
+    { k: 'name', label: 'Your name', ph: 'Noor' },
+    { k: 'partner', label: 'Their name', ph: 'Sami' },
+    { k: 'since', label: 'Together since', ph: 'June 2016' },
+    { k: 'met', label: 'How you met', ph: 'A wedding neither of us wanted to go to', long: true },
+  ],
+  family: [
+    { k: 'name', label: 'Family name', ph: 'The Haddads' },
+    { k: 'members', label: 'Who is in it', ph: 'Mum, Dad, Lina, Omar, Grandma' },
+    { k: 'year', label: 'The year to remember', ph: '2025' },
+    { k: 'place', label: 'The place you all know', ph: 'The kitchen table on a Friday', long: true },
+  ],
+};
+
+const TAGS = {
+  child: ['Dinosaurs', 'Space', 'The sea', 'Football', 'Dragons', 'Baking', 'Rain', 'Cats'],
+  couple: ['The first flat', 'Long distance', 'That road trip', 'The dog', 'Bad cooking', 'A wedding', 'Two cities'],
+  family: ['Sunday lunch', 'The old house', 'Grandparents', 'A new baby', 'Summers away', 'Too many cousins'],
+};
+
+const DIRECTIONS = {
+  child: [
+    { key: 'midnight', title: 'Midnight Magic', blurb: 'Ink-dark pages, stars, and a story that ends in sleep.' },
+    { key: 'scrapbook', title: 'Scrapbook', blurb: 'Cut paper, tape and stamps, as if they made it themselves.' },
+    { key: 'toybox', title: 'Toybox', blurb: 'Loud, primary and full of things that move.' },
+  ],
+  couple: [
+    { key: 'velvet', title: 'Midnight Velvet', blurb: 'Deep, quiet pages. Very few words per page.' },
+    { key: 'letterpress', title: 'Letter Press', blurb: 'Pressed type on thick paper, like a letter kept for years.' },
+    { key: 'garden', title: 'Paper Garden', blurb: 'Botanical margins and a lot of white space.' },
+  ],
+  family: [
+    { key: 'table', title: 'Kitchen Table', blurb: 'Warm paper, handwriting, everyone talking at once.' },
+    { key: 'album', title: 'The Album', blurb: 'Photographs mounted with captions, one year per spread.' },
+    { key: 'longtable', title: 'The Long Table', blurb: 'A page each, laid out like places set for dinner.' },
+  ],
+};
+
+class Component extends DCLogic {
+  state = {
+    audience: 'child', step: 1, direction: 0, titleIdx: 0, tags: [],
+    dedication: '',
+    data: { child: {}, couple: {}, family: {} },
+  };
+
+  componentDidMount() {
+    const q = new URLSearchParams(location.search).get('for');
+    const seed = this.props.startAudience;
+    const map = { child: 'child', couple: 'couple', family: 'family', kid: 'child', two: 'couple' };
+    const pick = map[q] || map[(seed || '').toLowerCase()] || null;
+    if (pick && pick !== this.state.audience) this.setState({ audience: pick });
+    this.bindAll();
+    this.setupCursor();
+  }
+  componentDidUpdate() { this.bindAll(); this.save(); }
+
+  save() {
+    try {
+      localStorage.setItem('farsh.book', JSON.stringify({
+        audience: this.state.audience, direction: this.state.direction,
+        title: this.titleOptions()[Math.min(this.state.titleIdx, 2)],
+        names: this.names(), tags: this.state.tags, dedication: this.state.dedication,
+        data: this.state.data[this.state.audience] || {},
+      }));
+    } catch (e) {}
+  }
+  componentWillUnmount() {
+    if (this.onMove) window.removeEventListener('mousemove', this.onMove);
+    if (this.ring && this.ring.parentNode) this.ring.parentNode.removeChild(this.ring);
+    if (this.rafC) cancelAnimationFrame(this.rafC);
+  }
+
+  reduced() { return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches; }
+
+  bindAll() { this.paintMarks(); this.setupStickers(); }
+
+  paintMarks() {
+    document.querySelectorAll('[data-mark]').forEach((el) => {
+      const key = el.getAttribute('data-mark');
+      const svg = MARKS[key] || MARKS.child;
+      if (el.dataset.painted !== key) { el.innerHTML = svg; el.dataset.painted = key; }
+    });
+  }
+
+  setupStickers() {
+    if ((this.props.stickers ?? true) === false) {
+      document.querySelectorAll('[data-sticker]').forEach((el) => { el.style.display = 'none'; });
+      return;
+    }
+    document.querySelectorAll('[data-sticker]').forEach((el) => {
+      el.style.display = '';
+      if (el.dataset.dragBound) return;
+      el.dataset.dragBound = '1';
+      const rot = el.dataset.rot || '0';
+      Object.assign(el.style, { touchAction: 'none', cursor: 'grab', userSelect: 'none' });
+      let sx = 0, sy = 0, ox = 0, oy = 0, dragging = false;
+      el.addEventListener('pointerdown', (e) => {
+        dragging = true;
+        try { el.setPointerCapture(e.pointerId); } catch (err) {}
+        sx = e.clientX; sy = e.clientY;
+        ox = parseFloat(el.dataset.dx || '0'); oy = parseFloat(el.dataset.dy || '0');
+        el.style.cursor = 'grabbing'; el.style.zIndex = '60';
+        el.style.animation = 'none'; el.style.transition = 'none';
+        e.preventDefault();
+      });
+      el.addEventListener('pointermove', (e) => {
+        if (!dragging) return;
+        const dx = ox + (e.clientX - sx), dy = oy + (e.clientY - sy);
+        el.dataset.dx = String(dx); el.dataset.dy = String(dy);
+        el.style.transform = 'translate3d(' + dx + 'px,' + dy + 'px,0) rotate(' + rot + 'deg)';
+      });
+      const end = () => { if (!dragging) return; dragging = false; el.style.cursor = 'grab'; el.style.transition = 'transform .3s cubic-bezier(.16,1,.3,1)'; };
+      el.addEventListener('pointerup', end);
+      el.addEventListener('pointercancel', end);
+    });
+  }
+
+  setupCursor() {
+    if ((this.props.playfulCursor ?? true) === false || this.reduced()) return;
+    if (!(window.matchMedia && window.matchMedia('(hover: hover)').matches)) return;
+    const ring = document.createElement('div');
+    ring.setAttribute('aria-hidden', 'true');
+    Object.assign(ring.style, {
+      position: 'fixed', left: '0', top: '0', width: '24px', height: '24px',
+      border: '2px solid var(--color-accent)', boxSizing: 'border-box', pointerEvents: 'none',
+      zIndex: '9999', opacity: '0', transform: 'translate(-50%,-50%)', mixBlendMode: 'multiply',
+      transition: 'width .18s ease, height .18s ease, background .18s ease, opacity .3s ease',
+    });
+    document.body.appendChild(ring);
+    this.ring = ring;
+    const pos = { x: 0, y: 0 }, target = { x: 0, y: 0 };
+    let active = false;
+    const tick = () => {
+      pos.x += (target.x - pos.x) * 0.22; pos.y += (target.y - pos.y) * 0.22;
+      ring.style.left = pos.x.toFixed(1) + 'px'; ring.style.top = pos.y.toFixed(1) + 'px';
+      this.rafC = (Math.abs(target.x - pos.x) > 0.4 || Math.abs(target.y - pos.y) > 0.4) ? requestAnimationFrame(tick) : null;
+    };
+    this.onMove = (e) => {
+      target.x = e.clientX; target.y = e.clientY;
+      ring.style.opacity = '1';
+      const hot = e.target && e.target.closest && e.target.closest('a,button,input,textarea,[data-sticker],[data-cover-card]');
+      if (!!hot !== active) {
+        active = !!hot;
+        ring.style.width = active ? '44px' : '24px';
+        ring.style.height = active ? '44px' : '24px';
+        ring.style.background = active ? 'color-mix(in srgb, var(--color-accent) 16%, transparent)' : 'transparent';
+      }
+      if (!this.rafC) this.rafC = requestAnimationFrame(tick);
+    };
+    window.addEventListener('mousemove', this.onMove, { passive: true });
+  }
+
+  go(step) {
+    const clamped = Math.max(1, Math.min(4, step));
+    if (clamped === this.state.step) return;
+    const panel = document.querySelector('[data-panel]');
+    if (panel && !this.reduced()) {
+      panel.style.animation = 'none';
+      void panel.offsetWidth;
+      panel.style.animation = 'turnPage .5s cubic-bezier(.16,1,.3,1)';
+    }
+    this.setState({ step: clamped });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  field(key, val) {
+    const a = this.state.audience;
+    const data = { ...this.state.data, [a]: { ...this.state.data[a], [key]: val } };
+    this.setState({ data });
+  }
+
+  vals() { return this.state.data[this.state.audience] || {}; }
+
+  names() {
+    const v = this.vals(), a = this.state.audience;
+    if (a === 'couple') {
+      const two = [v.name, v.partner].filter(Boolean);
+      return two.length === 2 ? two.join(' & ') : (two[0] || 'The two of you');
+    }
+    if (a === 'family') return v.name || 'Your family';
+    return v.name || 'Your kid';
+  }
+
+  titleOptions() {
+    const n = this.names(), v = this.vals(), a = this.state.audience;
+    if (a === 'couple') return [n + ', in order', 'The Long Way Round', 'How We Met' + (v.since ? ', ' + v.since : '')];
+    if (a === 'family') return [n, 'The Whole Lot of Us', (v.year || 'Our') + ': one page each'];
+    return [n + ' and the door in the garden wall', 'The night ' + n + ' saved the street', 'Goodnight, ' + n];
+  }
+
+  renderVals() {
+    const a = this.state.audience;
+    const t = THEME[a];
+    const step = this.state.step;
+    const v = this.vals();
+    const titles = this.titleOptions();
+    const dirs = DIRECTIONS[a];
+    const dir = dirs[Math.min(this.state.direction, dirs.length - 1)];
+
+    const chip = (on) => ({
+      padding: '11px 15px', cursor: 'pointer',
+      background: on ? 'var(--color-cta)' : 'transparent',
+      color: on ? 'var(--color-bg)' : 'var(--color-text)',
+      border: '2px solid ' + (on ? 'var(--color-cta)' : 'var(--color-text)'),
+      fontFamily: 'var(--font-heading)', fontWeight: '800', fontSize: '12px',
+      letterSpacing: '0.1em', textTransform: 'uppercase',
+      transition: 'background .2s ease, color .2s ease, border-color .2s ease',
+    });
+
+    const cardBase = (on) => ({
+      display: 'grid', gridTemplateColumns: 'auto 1fr auto', alignItems: 'center', gap: '18px',
+      width: '100%', boxSizing: 'border-box', padding: '20px', cursor: 'pointer',
+      background: on ? 'var(--color-accent-100)' : 'var(--color-bg)',
+      border: '2px solid ' + (on ? 'var(--color-cta)' : 'var(--color-text)'),
+      transition: 'background .2s ease, border-color .2s ease, transform .25s cubic-bezier(.16,1,.3,1)',
+      transform: on ? 'translateX(4px)' : 'none', textAlign: 'left', color: 'var(--color-text)',
+    });
+
+    const audienceCards = [
+      { key: 'child', title: 'A child', blurb: 'They are the hero: their name, their hair, the animal they love. Ages 0–10.' },
+      { key: 'couple', title: 'The two of you', blurb: 'How you met and the years since, told in very few words per page.' },
+      { key: 'family', title: 'The whole family', blurb: 'A page each, the old house, the grandparents, the year worth keeping.' },
+    ].map((c) => ({
+      ...c,
+      onPick: () => this.setState({ audience: c.key, direction: 0, titleIdx: 0, tags: [] }),
+      style: cardBase(c.key === a),
+      markStyle: {
+        width: '34px', height: '34px', display: 'block', flexShrink: '0',
+        color: c.key === a ? 'var(--color-accent)' : 'var(--color-neutral-500)',
+        animation: c.key === a && !this.reduced() ? THEME[c.key].markAnim : 'none',
+      },
+      tickStyle: {
+        fontFamily: 'var(--font-heading)', fontWeight: '800', fontSize: '18px',
+        color: 'var(--color-accent)', opacity: c.key === a ? '1' : '0',
+        transition: 'opacity .2s ease',
+      },
+    }));
+
+    const stepMeta = [
+      { no: '01', label: 'Who for' }, { no: '02', label: 'The details' },
+      { no: '03', label: 'Direction' }, { no: '04', label: 'Cover' },
+    ];
+
+    return {
+      shellStyle: { background: t.ground, transition: 'background .5s ease' },
+      modeLabel: t.mode,
+      audienceKey: a,
+      stepNo: String(step).padStart(2, '0'),
+      isStep1: step === 1, isStep2: step === 2, isStep3: step === 3, isStep4: step === 4,
+      notLast: step < 4,
+
+      steps: stepMeta.map((s, i) => {
+        const n = i + 1, done = n < step, on = n === step;
+        return {
+          ...s,
+          onGo: () => this.go(n),
+          style: {
+            appearance: 'none', cursor: 'pointer', textAlign: 'left', position: 'relative',
+            padding: '16px clamp(14px,1.6vw,22px) 18px', border: '0',
+            borderRight: i < 3 ? '2px solid var(--color-divider)' : '0',
+            background: on ? 'var(--color-text)' : 'transparent',
+            color: on ? 'var(--color-bg)' : (done ? 'var(--color-text)' : 'var(--color-neutral-600)'),
+            fontFamily: 'var(--font-body)', transition: 'background .25s ease, color .25s ease',
+          },
+          barStyle: {
+            position: 'absolute', left: '0', bottom: '0', height: '4px', width: '100%',
+            transformOrigin: 'left center', background: 'var(--color-accent)',
+            transform: (done || on) ? 'scaleX(1)' : 'scaleX(0)',
+            transition: 'transform .45s cubic-bezier(.16,1,.3,1)',
+          },
+        };
+      }),
+
+      audienceCards,
+
+      detailKicker: { child: 'About them', couple: 'About you two', family: 'About all of you' }[a],
+      detailTitle: { child: 'Tell us about them', couple: 'Tell us about you two', family: 'Tell us about the family' }[a],
+      detailBlurb: {
+        child: 'Small specific things work best. One real detail is worth ten invented ones.',
+        couple: 'The unremarkable details are the ones that land: the bad flat, the running joke, the long drive.',
+        family: 'Names, the house everyone remembers, and the year you want the book to hold.',
+      }[a],
+
+      fields: FIELDS[a].map((f) => ({
+        label: f.label, placeholder: f.ph, value: v[f.k] || '',
+        isLong: !!f.long, isShort: !f.long,
+        wrapStyle: { display: 'block', gridColumn: f.long ? '1 / -1' : 'auto' },
+        onInput: (e) => this.field(f.k, e.target.value),
+      })),
+
+      tagsLabel: { child: 'Things to weave in', couple: 'Things to weave in', family: 'Things to weave in' }[a],
+      tags: TAGS[a].map((label) => {
+        const on = this.state.tags.indexOf(label) > -1;
+        return {
+          label, style: chip(on),
+          onToggle: () => this.setState({
+            tags: on ? this.state.tags.filter((x) => x !== label) : this.state.tags.concat([label]),
+          }),
+        };
+      }),
+
+      directions: dirs.map((d, i) => {
+        const on = i === this.state.direction;
+        return {
+          title: d.title, blurb: d.blurb,
+          onPick: () => this.setState({ direction: i }),
+          style: {
+            appearance: 'none', cursor: 'pointer', padding: '16px', width: '100%', boxSizing: 'border-box',
+            background: on ? 'var(--color-accent-100)' : 'var(--color-bg)',
+            border: '2px solid ' + (on ? 'var(--color-cta)' : 'var(--color-text)'),
+            color: 'var(--color-text)', fontFamily: 'var(--font-body)',
+            transition: 'background .2s ease, border-color .2s ease, transform .25s cubic-bezier(.16,1,.3,1)',
+            transform: on ? 'translateY(-3px)' : 'none',
+          },
+          swatchStyle: {
+            display: 'block', height: '96px', position: 'relative', overflow: 'hidden',
+            background: i === 0 ? 'var(--color-text)' : (i === 1 ? 'var(--color-accent)' : 'var(--color-neutral-300)'),
+          },
+          swatchInner: {
+            position: 'absolute', left: '14px', right: '14px', bottom: '14px', height: '10px',
+            background: i === 2 ? 'var(--color-text)' : 'var(--color-bg)',
+            opacity: '0.9',
+          },
+        };
+      }),
+      directionLabel: dir.title,
+
+      titles: titles.map((text, i) => {
+        const on = i === this.state.titleIdx;
+        return {
+          text, onPick: () => this.setState({ titleIdx: i }),
+          style: {
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px',
+            appearance: 'none', cursor: 'pointer', width: '100%', boxSizing: 'border-box', padding: '16px 18px',
+            background: on ? 'var(--color-accent-100)' : 'var(--color-bg)',
+            border: '2px solid ' + (on ? 'var(--color-cta)' : 'var(--color-text)'),
+            color: 'var(--color-text)', fontFamily: 'var(--font-body)',
+            transition: 'background .2s ease, border-color .2s ease',
+          },
+          tickStyle: {
+            fontFamily: 'var(--font-heading)', fontWeight: '800', fontSize: '18px',
+            color: 'var(--color-accent)', opacity: on ? '1' : '0', transition: 'opacity .2s ease',
+          },
+        };
+      }),
+
+      dedication: this.state.dedication,
+      onDedication: (e) => this.setState({ dedication: e.target.value }),
+      dedicationHint: {
+        child: 'For Amara, who asks better questions than we do.',
+        couple: 'For you. Still the best decision I made.',
+        family: 'For all of us, and the ones who came before.',
+      }[a],
+
+      previewPaneStyle: {
+        background: t.pane, padding: 'clamp(22px,2.6vw,40px) clamp(20px,2.4vw,36px)',
+        minWidth: '0', transition: 'background .5s ease',
+      },
+      coverStyle: {
+        aspectRatio: '3/4', padding: 'clamp(18px,2vw,28px)', boxSizing: 'border-box',
+        display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
+        background: t.coverBg, color: t.coverInk,
+        border: '2px solid ' + t.coverEdge,
+        transform: 'rotate(' + t.tilt + ')',
+        transition: 'background .5s ease, color .5s ease, transform .5s cubic-bezier(.16,1,.3,1)',
+        boxShadow: 'var(--shadow-md)',
+      },
+      coverMarkStyle: {
+        width: '26px', height: '26px', display: 'block', flexShrink: '0',
+        color: 'currentColor', opacity: '0.85',
+        animation: this.reduced() ? 'none' : t.markAnim,
+      },
+      coverRuleStyle: { height: '2px', margin: '14px 0', background: 'currentColor', opacity: '0.9' },
+      coverTitle: titles[Math.min(this.state.titleIdx, titles.length - 1)],
+      coverNames: this.names(),
+
+      summary: [
+        { k: 'Book', v: t.mode },
+        { k: 'Direction', v: dir.title },
+        { k: 'Woven in', v: this.state.tags.length ? this.state.tags.slice(0, 2).join(', ') + (this.state.tags.length > 2 ? ' +' + (this.state.tags.length - 2) : '') : 'Nothing yet' },
+        { k: 'Pages', v: a === 'child' ? '32' : (a === 'couple' ? '48' : '40') },
+      ],
+      stickerLine: t.sticker,
+
+      onBack: () => this.go(step - 1),
+      onNext: () => this.go(step + 1),
+      backStyle: {
+        border: '2px solid var(--color-text)', background: 'transparent', color: 'var(--color-text)',
+        fontFamily: 'var(--font-heading)', fontWeight: '800', fontSize: '14px',
+        letterSpacing: '0.04em', textTransform: 'uppercase', padding: '15px 24px',
+        cursor: step === 1 ? 'not-allowed' : 'pointer', opacity: step === 1 ? '0.45' : '1',
+        transition: 'opacity .2s ease',
+      },
+      hint: step === 4 ? 'Nothing prints until you approve it' : 'You can change all of this later',
+      previewHref: './Book Preview.dc.html?for=' + a,
+    };
+  }
+}
+</script>
+</body>
+</html>

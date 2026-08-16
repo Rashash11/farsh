@@ -1,0 +1,20 @@
+{
+  "name": "farsh",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Farsh! — personalized book platform. Static site + a small API for AI story generation.",
+  "type": "commonjs",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.117.1",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

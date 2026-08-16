@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="_ds/modernist-e9855935-b7ff-4a14-ab9d-08d11d0948a2/styles.css">
+  <script src="_ds/modernist-e9855935-b7ff-4a14-ab9d-08d11d0948a2/_ds_bundle.js"></script>
+  <style>
+    :root {
+      --color-bg: #f5ead8;
+      --color-text: #201e1d;
+      --color-divider: #e2d0b3;
+      --color-accent: #c67139;
+      --color-accent-100: #ffe1d0;
+      --color-accent-200: #ffd3b8;
+      --color-accent-300: #ffc6a5;
+      --color-accent-400: #e08b4f;
+      --color-accent-500: #c67139;
+      --color-accent-600: #b2622d;
+      --color-accent-700: #8c491a;
+      --color-accent-800: #643312;
+      --color-accent-900: #402310;
+      --color-cta: #8c491a;
+      --color-cta-hover: #643312;
+      --color-accent-2-100: #e1eecc;
+      --color-accent-2-200: #d3e4b6;
+      --color-accent-2-700: #3d4a29;
+      --color-accent-2-900: #272e1b;
+      --color-neutral-100: #faf4e9;
+      --color-neutral-200: #eee2cd;
+      --color-neutral-300: #e2d4ba;
+      --color-neutral-500: rgba(32,30,29,0.45);
+      --color-neutral-600: rgba(32,30,29,0.58);
+      --color-neutral-700: rgba(32,30,29,0.68);
+      --color-neutral-800: rgba(32,30,29,0.78);
+      --color-neutral-900: #2e2b25;
+      --shadow-sm: 0 1px 2px rgba(64,35,16,0.12);
+      --shadow-md: 0 6px 18px rgba(64,35,16,0.14);
+      --shadow-lg: 0 18px 44px rgba(64,35,16,0.18);
+      --paper: linear-gradient(135deg, #f9f4ed 0%, #f0e6d3 100%);
+      --wash: radial-gradient(120% 100% at 14% 0%, #ffe1d0 0%, rgba(255,225,208,0) 64%);
+    }
+    body { margin: 0; background: var(--color-bg); color: var(--color-text); font-family: var(--font-body); }
+    a { color: var(--color-accent-700); text-decoration: none; }
+    a:hover { color: var(--color-accent); }
+    button:focus-visible, a:focus-visible, textarea:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+    textarea { font-family: var(--font-heading); }
+    @keyframes riseIn { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+    @keyframes turnPage { from { opacity: 0.15; transform: perspective(1400px) rotateY(-18deg); } to { opacity: 1; transform: none; } }
+    @keyframes wobble { 0%, 100% { transform: rotate(-2.5deg); } 50% { transform: rotate(2.5deg); } }
+    @keyframes beat { 0%, 100% { transform: scale(1); } 14% { transform: scale(1.16); } 28% { transform: scale(1); } 42% { transform: scale(1.1); } }
+    @keyframes driftY { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-7px); } }
+    @keyframes stampIn { from { opacity: 0; transform: rotate(-14deg) scale(1.3); } to { opacity: 1; transform: rotate(-6deg) scale(1); } }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; } }
+  </style>
+</helmet>
+
+<div style="{{ shellStyle }}">
+<div style="max-width:1440px;margin:0 auto;border-left:2px solid var(--color-divider);border-right:2px solid var(--color-divider);min-height:100vh;">
+
+  <nav style="display:flex;align-items:center;justify-content:space-between;gap:20px;padding:16px clamp(16px,3vw,40px);border-bottom:2px solid var(--color-divider);">
+    <div style="display:flex;align-items:baseline;gap:14px;">
+      <a href="./Landing Page.dc.html" style="font-family:var(--font-heading);font-weight:800;font-size:24px;letter-spacing:-0.04em;color:var(--color-text);">farsh<span style="color:var(--color-accent);">!</span></a>
+      <span style="font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:var(--color-neutral-600);">{{ modeLabel }} · proof copy</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:18px;">
+      <a href="{{ builderHref }}" style="font-size:12px;letter-spacing:0.1em;text-transform:uppercase;color:var(--color-text);border-bottom:2px solid transparent;transition:border-color .2s ease;" style-hover="border-color:var(--color-accent);">← Change details</a>
+      <a href="{{ checkoutHref }}" style="background:var(--color-cta);color:var(--color-bg);font-family:var(--font-heading);font-weight:800;font-size:13px;letter-spacing:0.04em;text-transform:uppercase;padding:12px 20px;transition:background .2s ease;" style-hover="background:var(--color-cta-hover);">Approve and print</a>
+    </div>
+  </nav>
+
+  <section style="padding:clamp(26px,3.2vw,48px) clamp(20px,3vw,44px) clamp(20px,2.4vw,32px);border-bottom:2px solid var(--color-divider);">
+    <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:24px;flex-wrap:wrap;">
+      <div style="min-width:0;">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+          <span style="{{ markStyle }}" data-mark="{{ audienceKey }}"></span>
+          <span style="font-size:12px;letter-spacing:0.18em;text-transform:uppercase;color:var(--color-accent-700);">Read it before it prints</span>
+        </div>
+        <h1 style="font-family:var(--font-heading);font-weight:800;font-size:clamp(30px,4.4vw,60px);line-height:0.94;letter-spacing:-0.042em;margin:0 0 12px;max-width:24ch;">{{ bookTitle }}</h1>
+        <div style="font-size:13px;letter-spacing:0.1em;text-transform:uppercase;color:var(--color-neutral-600);">{{ subline }}</div>
+      </div>
+      <div data-sticker data-rot="-6" style="background:var(--color-cta);color:var(--color-bg);font-family:var(--font-heading);font-weight:800;font-size:12px;letter-spacing:0.12em;text-transform:uppercase;padding:11px 15px;box-shadow:var(--shadow-md);transform:rotate(-6deg);animation:stampIn .5s cubic-bezier(.16,1,.3,1) both;">Proof · not printed yet</div>
+    </div>
+  </section>
+
+  <section style="padding:clamp(28px,3.4vw,52px) clamp(20px,3vw,44px);border-bottom:2px solid var(--color-divider);background:#2e2b25;">
+    <div data-spread style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));border:2px solid #2e2b25;background:var(--paper);box-shadow:0 24px 60px rgba(0,0,0,0.35);">
+      <div style="position:relative;aspect-ratio:4/3;background:var(--color-neutral-200);overflow:hidden;border-right:2px solid #2e2b25;">
+        <div role="img" aria-label="{{ spread.alt }}" style="{{ spread.imgStyle }}"></div>
+        <div style="position:absolute;left:0;bottom:0;background:var(--color-text);color:var(--color-bg);font-size:10px;letter-spacing:0.16em;text-transform:uppercase;padding:8px 12px;">{{ spread.plate }}</div>
+      </div>
+      <div style="padding:clamp(22px,3vw,44px);display:flex;flex-direction:column;justify-content:space-between;gap:22px;min-width:0;">
+        <div>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:18px;">
+            <span style="font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:var(--color-accent-700);">{{ spread.chapter }}</span>
+            <button onClick="{{ onEdit }}" style="{{ editBtnStyle }}">{{ editLabel }}</button>
+          </div>
+          <sc-if value="{{ editing }}" hint-placeholder-val="{{ false }}">
+            <textarea value="{{ draft }}" onChange="{{ onDraft }}" rows="5" style="width:100%;box-sizing:border-box;padding:14px;border:2px solid var(--color-accent);background:var(--color-bg);font-weight:400;font-size:clamp(18px,1.8vw,25px);line-height:1.35;letter-spacing:-0.02em;color:var(--color-text);resize:vertical;"></textarea>
+          </sc-if>
+          <sc-if value="{{ generatingView }}" hint-placeholder-val="{{ false }}">
+            <p style="font-family:var(--font-heading);font-weight:400;font-size:clamp(18px,1.9vw,27px);line-height:1.35;letter-spacing:-0.02em;margin:0;color:var(--color-neutral-600);font-style:italic;">Writing your book…</p>
+          </sc-if>
+          <sc-if value="{{ reading }}" hint-placeholder-val="{{ true }}">
+            <p style="font-family:var(--font-heading);font-weight:400;font-size:clamp(18px,1.9vw,27px);line-height:1.35;letter-spacing:-0.02em;margin:0;color:var(--color-text);text-wrap:pretty;">{{ spread.text }}</p>
+          </sc-if>
+          <sc-if value="{{ genErrorView }}" hint-placeholder-val="{{ false }}">
+            <div style="font-size:11px;letter-spacing:0.02em;color:var(--color-neutral-600);margin-top:10px;">Couldn't reach the writer ({{ genErrorMessage }}) — showing a sample page instead.</div>
+          </sc-if>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;border-top:2px solid var(--color-divider);padding-top:18px;">
+          <span style="font-size:12px;letter-spacing:0.12em;text-transform:uppercase;color:var(--color-neutral-600);white-space:nowrap;">{{ pageLabel }}</span>
+          <div style="display:flex;gap:10px;">
+            <button onClick="{{ onPrev }}" style="border:2px solid var(--color-text);background:var(--color-bg);color:var(--color-text);font-family:var(--font-heading);font-weight:800;font-size:13px;letter-spacing:0.06em;text-transform:uppercase;padding:11px 16px;cursor:pointer;white-space:nowrap;transition:background .2s ease,color .2s ease;" style-hover="background:var(--color-text);color:var(--color-bg);">← Back</button>
+            <button onClick="{{ onNext }}" style="border:2px solid var(--color-cta);background:var(--color-cta);color:var(--color-bg);font-family:var(--font-heading);font-weight:800;font-size:13px;letter-spacing:0.06em;text-transform:uppercase;padding:11px 16px;cursor:pointer;white-space:nowrap;transition:background .2s ease;" style-hover="background:var(--color-cta-hover);border-color:var(--color-cta-hover);">Turn the page →</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:18px;">
+      <sc-for list="{{ thumbs }}" as="th" hint-placeholder-count="6" data-on-dark="1">
+        <button onClick="{{ th.onGo }}" style="{{ th.style }}">
+          <span style="display:block;font-family:var(--font-heading);font-weight:800;font-size:12px;letter-spacing:0.08em;">{{ th.no }}</span>
+          <span style="display:block;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;margin-top:4px;">{{ th.label }}</span>
+        </button>
+      </sc-for>
+    </div>
+  </section>
+
+  <section style="padding:clamp(26px,3.2vw,48px) clamp(20px,3vw,44px);border-bottom:2px solid var(--color-divider);display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:clamp(20px,2.6vw,40px);">
+    <div>
+      <div style="font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:var(--color-neutral-600);margin-bottom:14px;">Dedication, page one</div>
+      <p style="font-family:var(--font-heading);font-weight:800;font-size:clamp(18px,1.9vw,24px);line-height:1.3;letter-spacing:-0.025em;margin:0;max-width:34ch;text-wrap:pretty;">{{ dedication }}</p>
+    </div>
+    <div>
+      <div style="font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:var(--color-neutral-600);margin-bottom:14px;">This proof</div>
+      <div style="display:flex;flex-direction:column;gap:9px;">
+        <sc-for list="{{ facts }}" as="f" hint-placeholder-count="4">
+          <div style="display:flex;align-items:baseline;justify-content:space-between;gap:14px;border-bottom:2px solid var(--color-divider);padding-bottom:8px;">
+            <span style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:var(--color-neutral-600);">{{ f.k }}</span>
+            <span style="font-family:var(--font-heading);font-weight:800;font-size:14px;letter-spacing:-0.01em;text-align:right;">{{ f.v }}</span>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </section>
+
+  <section style="{{ closeStyle }}">
+    <div style="font-size:12px;letter-spacing:0.18em;text-transform:uppercase;opacity:0.85;margin-bottom:20px;">{{ closeKicker }}</div>
+    <h2 style="font-family:var(--font-heading);font-weight:800;font-size:clamp(28px,4.4vw,58px);line-height:0.94;letter-spacing:-0.042em;margin:0 0 28px;max-width:22ch;">{{ closeLine }}</h2>
+    <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:center;">
+      <a href="{{ checkoutHref }}" style="{{ closeCtaStyle }}">Approve and print</a>
+      <a href="{{ builderHref }}" style="{{ closeAltStyle }}">Change something first</a>
+    </div>
+  </section>
+
+  <footer style="padding:26px clamp(20px,3vw,44px);display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--color-neutral-600);">
+    <span>© 2026 Farsh. All rights reserved.</span>
+    <a href="./Landing Page.dc.html" style="color:var(--color-text);">Back to the shop</a>
+  </footer>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1280,&quot;height&quot;:900},&quot;playfulCursor&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Play&quot;}}">
+const MARKS = {
+  child: '<svg viewBox="0 0 24 24" width="100%" height="100%" fill="currentColor" aria-hidden="true"><path d="M12 1.6l2.7 7.2 7.3.3-5.8 4.6 2.1 7.4L12 16.7l-6.3 4.4 2.1-7.4L2 9.1l7.3-.3z"/></svg>',
+  couple: '<svg viewBox="0 0 24 24" width="100%" height="100%" fill="currentColor" aria-hidden="true"><path d="M12 21.2S2.6 14.9 2.6 8.9A5.4 5.4 0 0 1 12 5.6a5.4 5.4 0 0 1 9.4 3.3c0 6-9.4 12.3-9.4 12.3z"/></svg>',
+  family: '<svg viewBox="0 0 24 24" width="100%" height="100%" fill="currentColor" aria-hidden="true"><rect x="1" y="1" width="6.6" height="6.6"/><rect x="8.7" y="1" width="6.6" height="6.6" opacity="0.45"/><rect x="16.4" y="1" width="6.6" height="6.6"/><rect x="1" y="8.7" width="6.6" height="6.6" opacity="0.45"/><rect x="8.7" y="8.7" width="6.6" height="6.6"/><rect x="16.4" y="8.7" width="6.6" height="6.6" opacity="0.45"/><rect x="1" y="16.4" width="6.6" height="6.6"/><rect x="8.7" y="16.4" width="6.6" height="6.6" opacity="0.45"/><rect x="16.4" y="16.4" width="6.6" height="6.6"/></svg>',
+};
+
+const THEME = {
+  child: { mode: 'For a child', ground: 'var(--wash), var(--color-bg)', markAnim: 'wobble 2.4s ease-in-out infinite',
+    closeBg: '#402310', closeInk: '#fff2eb', ctaBg: '#ffe1d0', ctaInk: '#402310', pages: '32 pages', stock: '150gsm uncoated' },
+  couple: { mode: 'For two of you', ground: 'radial-gradient(120% 100% at 86% 0%, #ffe1d0 0%, rgba(255,225,208,0) 66%), var(--color-bg)', markAnim: 'beat 2.6s ease-in-out infinite',
+    closeBg: '#643312', closeInk: '#fff2eb', ctaBg: '#ffe1d0', ctaInk: '#402310', pages: '48 pages', stock: 'Cloth, sewn by hand' },
+  family: { mode: 'For the whole family', ground: 'radial-gradient(130% 100% at 50% 0%, #e1eecc 0%, rgba(225,238,204,0) 70%), var(--color-bg)', markAnim: 'driftY 4s ease-in-out infinite',
+    closeBg: '#272e1b', closeInk: '#f2f7e6', ctaBg: '#e1eecc', ctaInk: '#272e1b', pages: '40 pages', stock: 'Warm white, 170gsm' },
+};
+
+const PLATES = ['uploads/pages/waking-up.jpg', 'uploads/pages/meeting-favorite.jpg', 'uploads/pages/saving-the-day.jpg',
+  'uploads/covers/great-adventure.jpg', 'uploads/covers/under-the-sea.jpg', 'uploads/covers/goodnight-little-one.jpg'];
+
+class Component extends DCLogic {
+  state = { audience: 'child', page: 0, editing: false, draft: '', edits: {}, book: null, generating: false, genError: null };
+
+  componentDidMount() {
+    let book = null;
+    try { book = JSON.parse(localStorage.getItem('farsh.book') || 'null'); } catch (e) {}
+    const q = new URLSearchParams(location.search).get('for');
+    const audience = ['child', 'couple', 'family'].indexOf(q) > -1 ? q : ((book && book.audience) || 'child');
+    this.setState({ audience, book });
+    this.flipping = 0;
+    this.bindAll();
+    this.setupCursor();
+    if (book) this.maybeGenerate(book);
+  }
+  componentDidUpdate() { this.bindAll(); }
+  componentWillUnmount() {
+    if (this.onMove) window.removeEventListener('mousemove', this.onMove);
+    if (this.ring && this.ring.parentNode) this.ring.parentNode.removeChild(this.ring);
+    if (this.rafC) cancelAnimationFrame(this.rafC);
+    if (this.flipTimer) clearTimeout(this.flipTimer);
+  }
+
+  reduced() { return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches; }
+
+  bindAll() { this.paintMarks(); this.setupStickers(); }
+
+  paintMarks() {
+    document.querySelectorAll('[data-mark]').forEach((el) => {
+      const key = el.getAttribute('data-mark');
+      const svg = MARKS[key] || MARKS.child;
+      if (el.dataset.painted !== key) { el.innerHTML = svg; el.dataset.painted = key; }
+    });
+  }
+
+  setupStickers() {
+    document.querySelectorAll('[data-sticker]').forEach((el) => {
+      if (el.dataset.dragBound) return;
+      el.dataset.dragBound = '1';
+      const rot = el.dataset.rot || '0';
+      Object.assign(el.style, { touchAction: 'none', cursor: 'grab', userSelect: 'none' });
+      let sx = 0, sy = 0, ox = 0, oy = 0, dragging = false;
+      el.addEventListener('pointerdown', (e) => {
+        dragging = true;
+        try { el.setPointerCapture(e.pointerId); } catch (err) {}
+        sx = e.clientX; sy = e.clientY;
+        ox = parseFloat(el.dataset.dx || '0'); oy = parseFloat(el.dataset.dy || '0');
+        el.style.cursor = 'grabbing'; el.style.zIndex = '60';
+        el.style.animation = 'none'; el.style.transition = 'none';
+        e.preventDefault();
+      });
+      el.addEventListener('pointermove', (e) => {
+        if (!dragging) return;
+        const dx = ox + (e.clientX - sx), dy = oy + (e.clientY - sy);
+        el.dataset.dx = String(dx); el.dataset.dy = String(dy);
+        el.style.transform = 'translate3d(' + dx + 'px,' + dy + 'px,0) rotate(' + rot + 'deg)';
+      });
+      const end = () => { if (!dragging) return; dragging = false; el.style.cursor = 'grab'; el.style.transition = 'transform .3s cubic-bezier(.16,1,.3,1)'; };
+      el.addEventListener('pointerup', end);
+      el.addEventListener('pointercancel', end);
+    });
+  }
+
+  setupCursor() {
+    if ((this.props.playfulCursor ?? true) === false || this.reduced()) return;
+    if (!(window.matchMedia && window.matchMedia('(hover: hover)').matches)) return;
+    const ring = document.createElement('div');
+    ring.setAttribute('aria-hidden', 'true');
+    Object.assign(ring.style, {
+      position: 'fixed', left: '0', top: '0', width: '24px', height: '24px',
+      border: '2px solid var(--color-accent)', boxSizing: 'border-box', pointerEvents: 'none',
+      zIndex: '9999', opacity: '0', transform: 'translate(-50%,-50%)', mixBlendMode: 'multiply',
+      transition: 'width .18s ease, height .18s ease, background .18s ease, opacity .3s ease',
+    });
+    document.body.appendChild(ring);
+    this.ring = ring;
+    const pos = { x: 0, y: 0 }, target = { x: 0, y: 0 };
+    let active = false;
+    const tick = () => {
+      pos.x += (target.x - pos.x) * 0.22; pos.y += (target.y - pos.y) * 0.22;
+      ring.style.left = pos.x.toFixed(1) + 'px'; ring.style.top = pos.y.toFixed(1) + 'px';
+      this.rafC = (Math.abs(target.x - pos.x) > 0.4 || Math.abs(target.y - pos.y) > 0.4) ? requestAnimationFrame(tick) : null;
+    };
+    this.onMove = (e) => {
+      target.x = e.clientX; target.y = e.clientY;
+      ring.style.opacity = '1';
+      const hot = e.target && e.target.closest && e.target.closest('a,button,textarea,[data-sticker]');
+      if (!!hot !== active) {
+        active = !!hot;
+        ring.style.width = active ? '44px' : '24px';
+        ring.style.height = active ? '44px' : '24px';
+        ring.style.background = active ? 'color-mix(in srgb, var(--color-accent) 16%, transparent)' : 'transparent';
+      }
+      if (!this.rafC) this.rafC = requestAnimationFrame(tick);
+    };
+    window.addEventListener('mousemove', this.onMove, { passive: true });
+  }
+
+  names() {
+    const b = this.state.book;
+    if (b && b.names) return b.names;
+    return { child: 'Amara', couple: 'Noor & Sami', family: 'The Haddads' }[this.state.audience];
+  }
+
+  // A cheap fingerprint of "the inputs that would change the story", so a
+  // previously-written book isn't silently re-billed and re-generated every
+  // time this page loads with unchanged details.
+  fingerprint(book) {
+    try {
+      return JSON.stringify({
+        audience: book.audience, names: book.names, data: book.data || {},
+        tags: book.tags || [], direction: book.direction || 0, title: book.title,
+      });
+    } catch (e) { return ''; }
+  }
+
+  maybeGenerate(book) {
+    const fp = this.fingerprint(book);
+    if (book.pages && book.pagesFor === fp) return;
+    this.generate(book, fp);
+  }
+
+  async generate(book, fp) {
+    this.setState({ generating: true, genError: null });
+    try {
+      const res = await fetch('/api/generate-book', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(book),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok || !Array.isArray(json.pages)) {
+        throw new Error((json && json.message) || 'Could not write the book right now.');
+      }
+      const updated = { ...book, pages: json.pages, pagesFor: fp };
+      try { localStorage.setItem('farsh.book', JSON.stringify(updated)); } catch (e) {}
+      this.setState({ book: updated, generating: false, genError: null });
+    } catch (e) {
+      this.setState({ generating: false, genError: (e && e.message) || 'Could not write the book right now.' });
+    }
+  }
+
+  spreads() {
+    const a = this.state.audience;
+    const n = this.names();
+    const first = String(n).split(' ')[0];
+    const sets = {
+      child: [
+        { chapter: 'Chapter one', text: n + ' woke up before the sun did, which had never happened before. Outside the window, the garden wall had grown a small green door.' },
+        { chapter: 'Chapter two', text: 'On the other side sat someone very large and very shy. "I have been waiting all week," it said. "Nobody else is brave enough to knock."' },
+        { chapter: 'Chapter three', text: 'They walked until the houses ran out. ' + first + ' did not once ask how far it was, which surprised them both.' },
+        { chapter: 'Chapter four', text: 'The trouble, when they found it, was smaller than expected. Most trouble is, once somebody stands still and looks at it properly.' },
+        { chapter: 'Chapter five', text: 'By the time the street woke up, ' + first + ' had already fixed the whole problem, and was home in time for breakfast with grass on both knees.' },
+        { chapter: 'The last page', text: 'The door is still there. ' + first + ' checks it every morning, and every so often it is open.' },
+      ],
+      couple: [
+        { chapter: 'One', text: 'Neither of you wanted to go to that wedding. This is the first thing the book gets right about ' + n + '.' },
+        { chapter: 'Two', text: 'The flat was too small and too cold and you stayed two years longer than you meant to.' },
+        { chapter: 'Three', text: 'There were eleven months of airports. You both learned to sleep sitting up, and to say the important things quickly.' },
+        { chapter: 'Four', text: 'Then a quiet year. No story in it, which is how you knew it was the good one.' },
+        { chapter: 'Five', text: 'The joke that nobody else finds funny is printed here, in full, without explanation.' },
+        { chapter: 'The last page', text: 'Everything since has been ordinary evenings. There is no better ending than that, and no better place to stop.' },
+      ],
+      family: [
+        { chapter: 'How it starts', text: 'Every family has a table. This one is ' + n + "'s, and it is louder than it looks." },
+        { chapter: 'The old house', text: 'The stairs creaked in three places and everyone learned which one to avoid coming home late.' },
+        { chapter: 'A page each', text: 'Everyone gets one page. Nobody gets two, no matter how much they argue for it.' },
+        { chapter: 'The summer', text: 'Sand in everything, one wrong turn that became the story, and nobody wanting to go home.' },
+        { chapter: 'The ones before', text: 'Names, dates, a village, a boat. Told plainly enough that a six-year-old can follow it.' },
+        { chapter: 'The last page', text: 'The table is still there on Fridays. The book is for the years when it will not be.' },
+      ],
+    };
+    const genPages = (this.state.book && Array.isArray(this.state.book.pages)) ? this.state.book.pages : null;
+    return (sets[a] || sets.child).map((s, i) => ({
+      ...s,
+      img: PLATES[i % PLATES.length],
+      imgStyle: {
+        width: '100%', height: '100%',
+        backgroundImage: 'url("' + PLATES[i % PLATES.length] + '")',
+        backgroundSize: 'cover', backgroundPosition: 'center',
+      },
+      alt: 'Illustrated page ' + (i + 1),
+      plate: 'Plate ' + String(i + 1).padStart(2, '0'),
+      // Manual edits always win. Otherwise prefer the AI-written page for
+      // this book; fall back to the sample text if generation hasn't
+      // finished yet (or failed) so the page is never blank.
+      text: this.state.edits[a + ':' + i] || (genPages && genPages[i]) || s.text,
+    }));
+  }
+
+  turn(dir) {
+    const total = this.spreads().length;
+    const next = (this.state.page + dir + total) % total;
+    const spread = document.querySelector('[data-spread]');
+    const halves = spread ? Array.from(spread.children) : [];
+    const busy = this.flipping && Date.now() - this.flipping < 1000;
+    if (!spread || halves.length < 2 || this.reduced() || busy) {
+      if (!busy) this.setState({ page: next, editing: false });
+      return;
+    }
+    spread.querySelectorAll('[data-flip-stage]').forEach((s) => s.remove());
+
+    const stacked = Math.abs(halves[0].offsetTop - halves[1].offsetTop) > 4;
+    if (stacked) {
+      spread.style.animation = 'none';
+      void spread.offsetWidth;
+      spread.style.animation = 'turnPage .55s cubic-bezier(.16,1,.3,1)';
+      this.setState({ page: next, editing: false });
+      return;
+    }
+
+    const forward = dir > 0;
+    const src = forward ? halves[1] : halves[0];
+    const other = forward ? halves[0] : halves[1];
+    const r = spread.getBoundingClientRect();
+    const sr = src.getBoundingClientRect();
+    const or_ = other.getBoundingClientRect();
+    const prevPos = spread.style.position;
+    if (getComputedStyle(spread).position === 'static') spread.style.position = 'relative';
+
+    const stage = document.createElement('div');
+    stage.setAttribute('aria-hidden', 'true');
+    stage.dataset.flipStage = '1';
+    Object.assign(stage.style, {
+      position: 'absolute', left: '0', top: '0', width: r.width + 'px', height: r.height + 'px',
+      perspective: '2200px', perspectiveOrigin: forward ? '0% 50%' : '100% 50%',
+      pointerEvents: 'none', zIndex: '40',
+    });
+
+    const box = { left: (sr.left - r.left) + 'px', top: (sr.top - r.top) + 'px', width: sr.width + 'px', height: sr.height + 'px' };
+    const otherBox = { left: (or_.left - r.left) + 'px', top: (or_.top - r.top) + 'px', width: or_.width + 'px', height: or_.height + 'px' };
+
+    const ghost = other.cloneNode(true);
+    Object.assign(ghost.style, { position: 'absolute', ...otherBox, margin: '0', boxSizing: 'border-box', zIndex: '0', background: 'var(--paper)', overflow: 'hidden' });
+
+    const cast = document.createElement('div');
+    Object.assign(cast.style, {
+      position: 'absolute', ...box, zIndex: '1', opacity: '0.9',
+      background: 'linear-gradient(to ' + (forward ? 'right' : 'left') + ', rgba(32,30,29,0.42), rgba(32,30,29,0.10) 42%, transparent 78%)',
+      transition: 'opacity .72s ease-out .1s',
+    });
+
+    const leaf = document.createElement('div');
+    Object.assign(leaf.style, {
+      position: 'absolute', ...box, zIndex: '2', transformStyle: 'preserve-3d',
+      transformOrigin: forward ? 'left center' : 'right center',
+      transition: 'transform .72s cubic-bezier(.32,.72,.3,1)', willChange: 'transform',
+    });
+
+    const front = src.cloneNode(true);
+    Object.assign(front.style, {
+      position: 'absolute', left: '0', top: '0', width: '100%', height: '100%',
+      margin: '0', boxSizing: 'border-box', background: 'var(--paper)',
+      backfaceVisibility: 'hidden', overflow: 'hidden',
+    });
+    const shade = document.createElement('div');
+    Object.assign(shade.style, {
+      position: 'absolute', left: '0', top: '0', right: '0', bottom: '0', opacity: '0',
+      background: 'linear-gradient(to ' + (forward ? 'left' : 'right') + ', rgba(32,30,29,0.55), rgba(32,30,29,0.05))',
+      transition: 'opacity .72s ease-in',
+    });
+    front.appendChild(shade);
+
+    const back = document.createElement('div');
+    Object.assign(back.style, {
+      position: 'absolute', left: '0', top: '0', width: '100%', height: '100%',
+      transform: 'rotateY(180deg)', backfaceVisibility: 'hidden', background: 'var(--paper)',
+      boxSizing: 'border-box', overflow: 'hidden',
+      boxShadow: 'inset ' + (forward ? '-22px' : '22px') + ' 0 40px -26px rgba(32,30,29,0.5)',
+    });
+
+    leaf.appendChild(front);
+    leaf.appendChild(back);
+    stage.appendChild(ghost);
+    stage.appendChild(cast);
+    stage.appendChild(leaf);
+    spread.appendChild(stage);
+
+    this.flipping = Date.now();
+    this.setState({ page: next, editing: false });
+
+    let started = false;
+    const start = () => {
+      if (started || !stage.isConnected) return;
+      started = true;
+      const live = Array.from(spread.children).filter((c) => c !== stage);
+      const dest = forward ? live[0] : live[1];
+      if (dest) {
+        const face = dest.cloneNode(true);
+        Object.assign(face.style, {
+          position: 'absolute', left: '0', top: '0', width: '100%', height: '100%',
+          margin: '0', boxSizing: 'border-box', overflow: 'hidden',
+        });
+        back.appendChild(face);
+      }
+      void leaf.offsetWidth;
+      leaf.style.transform = 'rotateY(' + (forward ? -178 : 178) + 'deg)';
+      shade.style.opacity = '1';
+      cast.style.opacity = '0';
+    };
+    requestAnimationFrame(start);
+    setTimeout(start, 40);
+
+    const finish = () => {
+      if (!stage.isConnected) return;
+      stage.remove();
+      spread.style.position = prevPos;
+      this.flipping = 0;
+    };
+    leaf.addEventListener('transitionend', finish);
+    if (this.flipTimer) clearTimeout(this.flipTimer);
+    this.flipTimer = setTimeout(finish, 1000);
+  }
+
+  goTo(i) {
+    if (i === this.state.page) return;
+    this.turn(i > this.state.page ? 1 : -1);
+    if (Math.abs(i - this.state.page) > 1) this.setState({ page: i, editing: false });
+  }
+
+  renderVals() {
+    const a = this.state.audience;
+    const t = THEME[a];
+    const b = this.state.book || {};
+    const list = this.spreads();
+    const spread = list[Math.min(this.state.page, list.length - 1)];
+    const dirNames = {
+      child: ['Midnight Magic', 'Scrapbook', 'Toybox'],
+      couple: ['Midnight Velvet', 'Letter Press', 'Paper Garden'],
+      family: ['Kitchen Table', 'The Album', 'The Long Table'],
+    };
+    const dirLabel = (dirNames[a] || dirNames.child)[Math.min(b.direction || 0, 2)];
+    const title = b.title || { child: 'Amara and the door in the garden wall', couple: 'The Long Way Round', family: 'The Whole Lot of Us' }[a];
+
+    return {
+      shellStyle: { background: t.ground, transition: 'background .5s ease' },
+      modeLabel: t.mode,
+      audienceKey: a,
+      markStyle: {
+        width: '26px', height: '26px', display: 'block', color: 'var(--color-accent)',
+        animation: this.reduced() ? 'none' : t.markAnim,
+      },
+      bookTitle: title,
+      subline: this.names() + ' · ' + dirLabel + ' · ' + t.pages,
+
+      spread,
+      pageLabel: 'Page ' + (this.state.page + 1) + ' of ' + list.length,
+      onPrev: () => this.turn(-1),
+      onNext: () => this.turn(1),
+
+      editing: this.state.editing,
+      reading: !this.state.editing && !this.state.generating,
+      generatingView: this.state.generating,
+      genErrorView: !!this.state.genError && !this.state.generating,
+      genErrorMessage: this.state.genError || '',
+      draft: this.state.draft,
+      onDraft: (e) => this.setState({ draft: e.target.value }),
+      editLabel: this.state.editing ? 'Save this line' : 'Rewrite this line',
+      editBtnStyle: {
+        border: '2px solid ' + (this.state.editing ? 'var(--color-cta)' : 'var(--color-text)'),
+        background: this.state.editing ? 'var(--color-cta)' : 'transparent',
+        color: this.state.editing ? 'var(--color-bg)' : 'var(--color-text)',
+        fontFamily: 'var(--font-heading)', fontWeight: '800', fontSize: '11px',
+        letterSpacing: '0.1em', textTransform: 'uppercase', padding: '9px 13px',
+        cursor: 'pointer', whiteSpace: 'nowrap', transition: 'background .2s ease, color .2s ease',
+      },
+      onEdit: () => {
+        if (this.state.editing) {
+          const key = a + ':' + this.state.page;
+          const text = (this.state.draft || '').trim();
+          this.setState({ editing: false, edits: { ...this.state.edits, [key]: text || undefined } });
+        } else {
+          this.setState({ editing: true, draft: spread.text });
+        }
+      },
+
+      thumbs: list.map((s, i) => ({
+        no: String(i + 1).padStart(2, '0'),
+        label: i === list.length - 1 ? 'End' : s.chapter.replace('Chapter ', 'Ch. '),
+        onGo: () => this.goTo(i),
+        style: {
+          appearance: 'none', cursor: 'pointer', padding: '10px 13px', textAlign: 'left',
+          background: i === this.state.page ? '#ffe1d0' : 'transparent',
+          color: i === this.state.page ? '#402310' : '#f0e6d3',
+          border: '2px solid ' + (i === this.state.page ? '#ffe1d0' : 'rgba(240,230,211,0.45)'),
+          fontFamily: 'var(--font-body)', transition: 'background .2s ease, color .2s ease, border-color .2s ease',
+        },
+      })),
+
+      dedication: b.dedication || { child: 'For Amara, who asks better questions than we do.', couple: 'For you. Still the best decision I made.', family: 'For all of us, and the ones who came before.' }[a],
+      facts: [
+        { k: 'Direction', v: dirLabel },
+        { k: 'Extent', v: t.pages },
+        { k: 'Paper', v: t.stock },
+        { k: 'Woven in', v: (b.tags && b.tags.length) ? b.tags.slice(0, 2).join(', ') : 'Your details' },
+      ],
+
+      closeStyle: {
+        background: t.closeBg, color: t.closeInk,
+        borderBottom: '2px solid var(--color-accent-900)',
+        padding: 'clamp(40px,5vw,84px) clamp(20px,3vw,44px)',
+        transition: 'background .5s ease, color .5s ease',
+      },
+      closeKicker: { child: 'One more thing', couple: 'When you are ready', family: 'When everyone agrees' }[a],
+      closeLine: {
+        child: 'Print it, and let them find their own name on page four.',
+        couple: 'Print it, and give someone the only copy there is.',
+        family: 'Print it once for the table, and once for whoever asks.',
+      }[a],
+      closeCtaStyle: {
+        background: t.ctaBg, color: t.ctaInk,
+        fontFamily: 'var(--font-heading)', fontWeight: '800', fontSize: '14px',
+        letterSpacing: '0.04em', textTransform: 'uppercase', padding: '17px 30px',
+        transition: 'letter-spacing .3s ease',
+      },
+      closeAltStyle: {
+        border: '2px solid currentColor', color: 'currentColor',
+        fontFamily: 'var(--font-heading)', fontWeight: '800', fontSize: '14px',
+        letterSpacing: '0.04em', textTransform: 'uppercase', padding: '15px 26px',
+      },
+      builderHref: './Book Builder.dc.html?for=' + a,
+      checkoutHref: './Checkout.dc.html?for=' + a,
+    };
+  }
+}
+</script>
+</body>
+</html>
