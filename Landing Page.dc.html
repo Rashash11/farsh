@@ -446,10 +446,26 @@ class Component extends DCLogic {
       card.dataset.flipBound = '1';
       const cover = card.querySelector('[data-cover]');
       if (!cover) return;
-      card.addEventListener('mouseenter', () => { cover.style.transform = 'rotateY(-46deg)'; cover.style.boxShadow = 'var(--shadow-lg)'; });
-      card.addEventListener('mouseleave', () => { cover.style.transform = 'rotateY(0deg)'; cover.style.boxShadow = 'none'; });
-      card.addEventListener('focus', () => { cover.style.transform = 'rotateY(-46deg)'; });
-      card.addEventListener('blur', () => { cover.style.transform = 'rotateY(0deg)'; });
+      // Two-faced cover so it can swing fully open like a real book:
+      // the artwork is the front face, and a plain paper panel is the
+      // inside of the cover once it passes 90 degrees.
+      cover.style.transformStyle = 'preserve-3d';
+      Array.from(cover.children).forEach((c) => { c.style.backfaceVisibility = 'hidden'; });
+      const back = document.createElement('div');
+      back.setAttribute('aria-hidden', 'true');
+      Object.assign(back.style, {
+        position: 'absolute', inset: '0', background: 'var(--paper)',
+        transform: 'rotateY(180deg)', backfaceVisibility: 'hidden',
+        boxShadow: 'inset -14px 0 26px -18px rgba(64,35,16,0.35)',
+      });
+      cover.appendChild(back);
+      cover.style.transition = 'transform .85s cubic-bezier(.16,1,.3,1)';
+      const open = () => { cover.style.transform = 'rotateY(-165deg)'; cover.style.boxShadow = 'var(--shadow-lg)'; };
+      const close = () => { cover.style.transform = 'rotateY(0deg)'; cover.style.boxShadow = 'none'; };
+      card.addEventListener('mouseenter', open);
+      card.addEventListener('mouseleave', close);
+      card.addEventListener('focus', open);
+      card.addEventListener('blur', close);
     });
   }
 
