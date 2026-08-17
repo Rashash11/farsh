@@ -13,6 +13,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="_ds/modernist-e9855935-b7ff-4a14-ab9d-08d11d0948a2/styles.css">
   <script src="_ds/modernist-e9855935-b7ff-4a14-ab9d-08d11d0948a2/_ds_bundle.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3/dist/gsap.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3/dist/CustomEase.min.js"></script>
   <style>
     :root {
       --color-bg: #f5ead8;
@@ -59,6 +61,22 @@
     @keyframes beat { 0%, 100% { transform: scale(1); } 14% { transform: scale(1.16); } 28% { transform: scale(1); } 42% { transform: scale(1.1); } }
     @keyframes driftY { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-7px); } }
     @keyframes stampIn { from { opacity: 0; transform: rotate(-14deg) scale(1.3); } to { opacity: 1; transform: rotate(-6deg) scale(1); } }
+    /* Page-flip book (adapted from Hank-D-Tank/x-book, GSAP-driven) */
+    .xb-book { position: relative; width: min(960px, 100%); aspect-ratio: 16/10; perspective: 2600px; cursor: pointer; margin: 0 auto; }
+    .xb-book::before { content: ""; position: absolute; inset: 7% 10% -3% 10%; background: rgba(0,0,0,0.5); filter: blur(30px); }
+    .xb-book * { pointer-events: none; }
+    .xb-half, .xb-flap { position: absolute; top: 0; bottom: 0; width: 50%; }
+    .xb-half { overflow: hidden; }
+    .xb-half.xb-right, .xb-flap.xb-next { left: 50%; }
+    .xb-half.xb-left, .xb-flap.xb-prev { left: 0; }
+    .xb-flap { transform-style: preserve-3d; will-change: transform; }
+    .xb-face { position: absolute; inset: 0; backface-visibility: hidden; overflow: hidden; }
+    .xb-face.xb-back { transform: rotateY(180deg); }
+    .xb-pg { position: absolute; inset: 0; }
+    .xb-pg-art { background-size: cover; background-position: center; box-shadow: inset -18px 0 30px -20px rgba(32,30,29,0.55); }
+    .xb-pg-text { background: var(--paper); box-shadow: inset 18px 0 30px -20px rgba(32,30,29,0.45); box-sizing: border-box; padding: clamp(18px,3vw,44px); display: flex; flex-direction: column; justify-content: space-between; }
+    .xb-blur-light .xb-pg { filter: url(#xb-blur-light); }
+    .xb-blur-heavy .xb-pg { filter: url(#xb-blur-heavy); }
     @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; } }
   </style>
 </helmet>
@@ -92,39 +110,30 @@
   </section>
 
   <section style="padding:clamp(28px,3.4vw,52px) clamp(20px,3vw,44px);border-bottom:2px solid var(--color-divider);background:#2e2b25;">
-    <div data-spread style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));border:2px solid #2e2b25;background:var(--paper);box-shadow:0 24px 60px rgba(0,0,0,0.35);">
-      <div style="position:relative;aspect-ratio:4/3;background:var(--color-neutral-200);overflow:hidden;border-right:2px solid #2e2b25;">
-        <div role="img" aria-label="{{ spread.alt }}" style="{{ spread.imgStyle }}"></div>
-        <div style="position:absolute;left:0;bottom:0;background:var(--color-text);color:var(--color-bg);font-size:10px;letter-spacing:0.16em;text-transform:uppercase;padding:8px 12px;">{{ spread.plate }}</div>
-      </div>
-      <div style="padding:clamp(22px,3vw,44px);display:flex;flex-direction:column;justify-content:space-between;gap:22px;min-width:0;">
-        <div>
-          <div style="display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:18px;">
-            <span style="font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:var(--color-accent-700);">{{ spread.chapter }}</span>
-            <button onClick="{{ onEdit }}" style="{{ editBtnStyle }}">{{ editLabel }}</button>
-          </div>
-          <sc-if value="{{ editing }}" hint-placeholder-val="{{ false }}">
-            <textarea value="{{ draft }}" onChange="{{ onDraft }}" rows="5" style="width:100%;box-sizing:border-box;padding:14px;border:2px solid var(--color-accent);background:var(--color-bg);font-weight:400;font-size:clamp(18px,1.8vw,25px);line-height:1.35;letter-spacing:-0.02em;color:var(--color-text);resize:vertical;"></textarea>
-          </sc-if>
-          <sc-if value="{{ generatingView }}" hint-placeholder-val="{{ false }}">
-            <p style="font-family:var(--font-heading);font-weight:400;font-size:clamp(18px,1.9vw,27px);line-height:1.35;letter-spacing:-0.02em;margin:0;color:var(--color-neutral-600);font-style:italic;">Writing your book…</p>
-          </sc-if>
-          <sc-if value="{{ reading }}" hint-placeholder-val="{{ true }}">
-            <p style="font-family:var(--font-heading);font-weight:400;font-size:clamp(18px,1.9vw,27px);line-height:1.35;letter-spacing:-0.02em;margin:0;color:var(--color-text);text-wrap:pretty;">{{ spread.text }}</p>
-          </sc-if>
-          <sc-if value="{{ genErrorView }}" hint-placeholder-val="{{ false }}">
-            <div style="font-size:11px;letter-spacing:0.02em;color:var(--color-neutral-600);margin-top:10px;">Couldn't reach the writer ({{ genErrorMessage }}) — showing a sample page instead.</div>
-          </sc-if>
-        </div>
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;border-top:2px solid var(--color-divider);padding-top:18px;">
-          <span style="font-size:12px;letter-spacing:0.12em;text-transform:uppercase;color:var(--color-neutral-600);white-space:nowrap;">{{ pageLabel }}</span>
-          <div style="display:flex;gap:10px;">
-            <button onClick="{{ onPrev }}" style="border:2px solid var(--color-text);background:var(--color-bg);color:var(--color-text);font-family:var(--font-heading);font-weight:800;font-size:13px;letter-spacing:0.06em;text-transform:uppercase;padding:11px 16px;cursor:pointer;white-space:nowrap;transition:background .2s ease,color .2s ease;" style-hover="background:var(--color-text);color:var(--color-bg);">← Back</button>
-            <button onClick="{{ onNext }}" style="border:2px solid var(--color-cta);background:var(--color-cta);color:var(--color-bg);font-family:var(--font-heading);font-weight:800;font-size:13px;letter-spacing:0.06em;text-transform:uppercase;padding:11px 16px;cursor:pointer;white-space:nowrap;transition:background .2s ease;" style-hover="background:var(--color-cta-hover);border-color:var(--color-cta-hover);">Turn the page →</button>
-          </div>
-        </div>
-      </div>
+    <svg width="0" height="0" aria-hidden="true">
+      <filter id="xb-blur-light"><feGaussianBlur stdDeviation="5 0"/></filter>
+      <filter id="xb-blur-heavy"><feGaussianBlur stdDeviation="14 0"/></filter>
+    </svg>
+
+    <div style="display:flex;align-items:center;gap:clamp(6px,1.4vw,18px);">
+      <button onClick="{{ onPrev }}" aria-label="Previous page" style="border:0;background:none;font-size:38px;line-height:1;color:rgba(240,230,211,0.55);cursor:pointer;padding:6px;transition:color .2s ease;" style-hover="color:#ffe1d0;">‹</button>
+      <div data-book class="xb-book" role="region" aria-label="Book preview — click a page or use arrow keys to turn"></div>
+      <button onClick="{{ onNext }}" aria-label="Next page" style="border:0;background:none;font-size:38px;line-height:1;color:rgba(240,230,211,0.55);cursor:pointer;padding:6px;transition:color .2s ease;" style-hover="color:#ffe1d0;">›</button>
     </div>
+
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-top:18px;">
+      <div data-book-caption style="font-size:12px;letter-spacing:0.14em;text-transform:uppercase;color:rgba(240,230,211,0.8);"></div>
+      <button onClick="{{ onEdit }}" style="{{ editBtnStyle }}">{{ editLabel }}</button>
+    </div>
+
+    <sc-if value="{{ editing }}" hint-placeholder-val="{{ false }}">
+      <div style="margin-top:14px;">
+        <textarea value="{{ draft }}" onChange="{{ onDraft }}" rows="4" style="width:100%;box-sizing:border-box;padding:14px;border:2px solid var(--color-accent);background:var(--color-bg);font-weight:400;font-size:clamp(16px,1.5vw,21px);line-height:1.35;letter-spacing:-0.02em;color:var(--color-text);resize:vertical;"></textarea>
+      </div>
+    </sc-if>
+    <sc-if value="{{ genErrorView }}" hint-placeholder-val="{{ false }}">
+      <div style="font-size:11px;letter-spacing:0.02em;color:rgba(240,230,211,0.6);margin-top:10px;">Couldn't reach the writer ({{ genErrorMessage }}) — showing a sample page instead.</div>
+    </sc-if>
 
     <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:18px;">
       <sc-for list="{{ thumbs }}" as="th" hint-placeholder-count="6" data-on-dark="1">
@@ -199,17 +208,36 @@ class Component extends DCLogic {
     const q = new URLSearchParams(location.search).get('for');
     const audience = ['child', 'couple', 'family'].indexOf(q) > -1 ? q : ((book && book.audience) || 'child');
     this.setState({ audience, book });
-    this.flipping = 0;
     this.bindAll();
     this.setupCursor();
     if (book) this.maybeGenerate(book);
+    // Page-flip book (adapted from Hank-D-Tank/x-book)
+    if (window.gsap && window.CustomEase && !this.easeReady) {
+      gsap.registerPlugin(CustomEase);
+      CustomEase.create('pageTurn', '.42,.05,.25,1');
+      this.easeReady = true;
+    }
+    this.bookIndex = 0;
+    this.paintBook();
+    this.onKey = (e) => {
+      const tag = (document.activeElement || {}).tagName || '';
+      if (/INPUT|TEXTAREA/.test(tag)) return;
+      if (e.key === 'ArrowRight') this.turnSpread('next');
+      if (e.key === 'ArrowLeft') this.turnSpread('prev');
+    };
+    window.addEventListener('keydown', this.onKey);
+    if (window.gsap && !this.reduced()) {
+      this.riffling = true;
+      this.riffleTimer = setTimeout(() => this.xbRiffle(0), 600);
+    }
   }
-  componentDidUpdate() { this.bindAll(); }
+  componentDidUpdate() { this.bindAll(); this.paintBook(); }
   componentWillUnmount() {
     if (this.onMove) window.removeEventListener('mousemove', this.onMove);
+    if (this.onKey) window.removeEventListener('keydown', this.onKey);
     if (this.ring && this.ring.parentNode) this.ring.parentNode.removeChild(this.ring);
     if (this.rafC) cancelAnimationFrame(this.rafC);
-    if (this.flipTimer) clearTimeout(this.flipTimer);
+    if (this.riffleTimer) clearTimeout(this.riffleTimer);
   }
 
   reduced() { return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches; }
@@ -379,134 +407,143 @@ class Component extends DCLogic {
     }));
   }
 
-  turn(dir) {
-    const total = this.spreads().length;
-    const next = (this.state.page + dir + total) % total;
-    const spread = document.querySelector('[data-spread]');
-    const halves = spread ? Array.from(spread.children) : [];
-    const busy = this.flipping && Date.now() - this.flipping < 1000;
-    if (!spread || halves.length < 2 || this.reduced() || busy) {
-      if (!busy) this.setState({ page: next, editing: false });
-      return;
-    }
-    spread.querySelectorAll('[data-flip-stage]').forEach((s) => s.remove());
+  // ---- Page-flip book engine (adapted from Hank-D-Tank/x-book, GSAP) ----
 
-    const stacked = Math.abs(halves[0].offsetTop - halves[1].offsetTop) > 4;
-    if (stacked) {
-      spread.style.animation = 'none';
-      void spread.offsetWidth;
-      spread.style.animation = 'turnPage .55s cubic-bezier(.16,1,.3,1)';
-      this.setState({ page: next, editing: false });
-      return;
-    }
-
-    const forward = dir > 0;
-    const src = forward ? halves[1] : halves[0];
-    const other = forward ? halves[0] : halves[1];
-    const r = spread.getBoundingClientRect();
-    const sr = src.getBoundingClientRect();
-    const or_ = other.getBoundingClientRect();
-    const prevPos = spread.style.position;
-    if (getComputedStyle(spread).position === 'static') spread.style.position = 'relative';
-
-    const stage = document.createElement('div');
-    stage.setAttribute('aria-hidden', 'true');
-    stage.dataset.flipStage = '1';
-    Object.assign(stage.style, {
-      position: 'absolute', left: '0', top: '0', width: r.width + 'px', height: r.height + 'px',
-      perspective: '2200px', perspectiveOrigin: forward ? '0% 50%' : '100% 50%',
-      pointerEvents: 'none', zIndex: '40',
-    });
-
-    const box = { left: (sr.left - r.left) + 'px', top: (sr.top - r.top) + 'px', width: sr.width + 'px', height: sr.height + 'px' };
-    const otherBox = { left: (or_.left - r.left) + 'px', top: (or_.top - r.top) + 'px', width: or_.width + 'px', height: or_.height + 'px' };
-
-    const ghost = other.cloneNode(true);
-    Object.assign(ghost.style, { position: 'absolute', ...otherBox, margin: '0', boxSizing: 'border-box', zIndex: '0', background: 'var(--paper)', overflow: 'hidden' });
-
-    const cast = document.createElement('div');
-    Object.assign(cast.style, {
-      position: 'absolute', ...box, zIndex: '1', opacity: '0.9',
-      background: 'linear-gradient(to ' + (forward ? 'right' : 'left') + ', rgba(32,30,29,0.42), rgba(32,30,29,0.10) 42%, transparent 78%)',
-      transition: 'opacity .72s ease-out .1s',
-    });
-
-    const leaf = document.createElement('div');
-    Object.assign(leaf.style, {
-      position: 'absolute', ...box, zIndex: '2', transformStyle: 'preserve-3d',
-      transformOrigin: forward ? 'left center' : 'right center',
-      transition: 'transform .72s cubic-bezier(.32,.72,.3,1)', willChange: 'transform',
-    });
-
-    const front = src.cloneNode(true);
-    Object.assign(front.style, {
-      position: 'absolute', left: '0', top: '0', width: '100%', height: '100%',
-      margin: '0', boxSizing: 'border-box', background: 'var(--paper)',
-      backfaceVisibility: 'hidden', overflow: 'hidden',
-    });
-    const shade = document.createElement('div');
-    Object.assign(shade.style, {
-      position: 'absolute', left: '0', top: '0', right: '0', bottom: '0', opacity: '0',
-      background: 'linear-gradient(to ' + (forward ? 'left' : 'right') + ', rgba(32,30,29,0.55), rgba(32,30,29,0.05))',
-      transition: 'opacity .72s ease-in',
-    });
-    front.appendChild(shade);
-
-    const back = document.createElement('div');
-    Object.assign(back.style, {
-      position: 'absolute', left: '0', top: '0', width: '100%', height: '100%',
-      transform: 'rotateY(180deg)', backfaceVisibility: 'hidden', background: 'var(--paper)',
-      boxSizing: 'border-box', overflow: 'hidden',
-      boxShadow: 'inset ' + (forward ? '-22px' : '22px') + ' 0 40px -26px rgba(32,30,29,0.5)',
-    });
-
-    leaf.appendChild(front);
-    leaf.appendChild(back);
-    stage.appendChild(ghost);
-    stage.appendChild(cast);
-    stage.appendChild(leaf);
-    spread.appendChild(stage);
-
-    this.flipping = Date.now();
-    this.setState({ page: next, editing: false });
-
-    let started = false;
-    const start = () => {
-      if (started || !stage.isConnected) return;
-      started = true;
-      const live = Array.from(spread.children).filter((c) => c !== stage);
-      const dest = forward ? live[0] : live[1];
-      if (dest) {
-        const face = dest.cloneNode(true);
-        Object.assign(face.style, {
-          position: 'absolute', left: '0', top: '0', width: '100%', height: '100%',
-          margin: '0', boxSizing: 'border-box', overflow: 'hidden',
-        });
-        back.appendChild(face);
-      }
-      void leaf.offsetWidth;
-      leaf.style.transform = 'rotateY(' + (forward ? -178 : 178) + 'deg)';
-      shade.style.opacity = '1';
-      cast.style.opacity = '0';
-    };
-    requestAnimationFrame(start);
-    setTimeout(start, 40);
-
-    const finish = () => {
-      if (!stage.isConnected) return;
-      stage.remove();
-      spread.style.position = prevPos;
-      this.flipping = 0;
-    };
-    leaf.addEventListener('transitionend', finish);
-    if (this.flipTimer) clearTimeout(this.flipTimer);
-    this.flipTimer = setTimeout(finish, 1000);
+  esc(t) {
+    return String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
 
-  goTo(i) {
-    if (i === this.state.page) return;
-    this.turn(i > this.state.page ? 1 : -1);
-    if (Math.abs(i - this.state.page) > 1) this.setState({ page: i, editing: false });
+  bookEl() { return document.querySelector('[data-book]'); }
+
+  // One page-half of a spread: left = illustration plate, right = story text.
+  spreadHalf(i, side) {
+    const list = this.spreads();
+    const s = list[(i % list.length + list.length) % list.length];
+    if (side === 'left') {
+      return '<div class="xb-pg xb-pg-art" style="background-image:url(\'' + s.img + '\')">' +
+        '<div style="position:absolute;left:0;bottom:0;background:var(--color-text);color:var(--color-bg);font-size:10px;letter-spacing:0.16em;text-transform:uppercase;padding:7px 11px;">' + this.esc(s.plate) + '</div>' +
+      '</div>';
+    }
+    const writing = this.state.generating;
+    const body = writing
+      ? '<p style="font-family:var(--font-heading);font-weight:400;font-size:clamp(13px,1.6vw,22px);line-height:1.35;letter-spacing:-0.02em;margin:0;color:var(--color-neutral-600);font-style:italic;">Writing your book\u2026</p>'
+      : '<p style="font-family:var(--font-heading);font-weight:400;font-size:clamp(13px,1.6vw,22px);line-height:1.35;letter-spacing:-0.02em;margin:0;color:var(--color-text);">' + this.esc(s.text) + '</p>';
+    return '<div class="xb-pg xb-pg-text">' +
+      '<div style="font-size:clamp(9px,1vw,11px);letter-spacing:0.18em;text-transform:uppercase;color:var(--color-accent-700);">' + this.esc(s.chapter) + '</div>' +
+      body +
+      '<div style="font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--color-neutral-600);text-align:right;">Page ' + (((i % list.length + list.length) % list.length) + 1) + ' of ' + list.length + '</div>' +
+    '</div>';
+  }
+
+  xbShow(i) {
+    const book = this.bookEl();
+    if (!book) return;
+    const base = book.querySelector('[data-xb-page]');
+    if (base) {
+      base.innerHTML =
+        '<div class="xb-half xb-left">' + this.spreadHalf(i, 'left') + '</div>' +
+        '<div class="xb-half xb-right">' + this.spreadHalf(i, 'right') + '</div>';
+    }
+    const cap = document.querySelector('[data-book-caption]');
+    if (cap) {
+      const list = this.spreads();
+      cap.textContent = list[i].chapter + ' \u00b7 Page ' + (i + 1) + ' of ' + list.length;
+    }
+  }
+
+  paintBook() {
+    const book = this.bookEl();
+    if (!book) return;
+    if (this.flipTween && this.flipTween.isActive && this.flipTween.isActive()) this.flipTween.progress(1);
+    this.riffling = false;
+    book.classList.remove('xb-blur-light', 'xb-blur-heavy');
+    book.querySelectorAll('[data-xb-turn]').forEach((t) => t.remove());
+    this.bookIndex = this.state.page;
+    book.innerHTML = '<div data-xb-page></div>';
+    this.xbShow(this.bookIndex);
+    book.onclick = (e) => {
+      this.turnSpread(e.offsetX < book.offsetWidth / 2 ? 'prev' : 'next');
+    };
+  }
+
+  // Core flap turn. target defaults to the adjacent spread; jumps pass it in.
+  xbTurn(direction, duration, ease, onDone, targetOverride) {
+    const book = this.bookEl();
+    const list = this.spreads();
+    if (!book || !list.length) return;
+    const goingNext = direction === 'next';
+    const cur = this.bookIndex;
+    const target = targetOverride != null
+      ? targetOverride
+      : (cur + (goingNext ? 1 : -1) + list.length) % list.length;
+    if (this.flipTween && this.flipTween.isActive && this.flipTween.isActive()) this.flipTween.progress(1);
+    if (!window.gsap || this.reduced()) {
+      this.bookIndex = target;
+      this.xbShow(target);
+      if (onDone) onDone();
+      return;
+    }
+    const liftSide = goingNext ? 'right' : 'left';
+    const landSide = goingNext ? 'left' : 'right';
+    const turnEl = document.createElement('div');
+    turnEl.setAttribute('data-xb-turn', '1');
+    turnEl.innerHTML =
+      '<div class="xb-half xb-' + liftSide + '">' + this.spreadHalf(target, liftSide) + '</div>' +
+      '<div class="xb-flap xb-' + (goingNext ? 'next' : 'prev') + '">' +
+        '<div class="xb-face">' + this.spreadHalf(cur, liftSide) + '</div>' +
+        '<div class="xb-face xb-back">' + this.spreadHalf(target, landSide) + '</div>' +
+      '</div>';
+    book.appendChild(turnEl);
+    this.bookIndex = target;
+    const cap = document.querySelector('[data-book-caption]');
+    if (cap) cap.textContent = list[target].chapter + ' \u00b7 Page ' + (target + 1) + ' of ' + list.length;
+    this.flipTween = gsap.to(turnEl.querySelector('.xb-flap'), {
+      rotationY: goingNext ? -180 : 180,
+      transformOrigin: goingNext ? 'left center' : 'right center',
+      duration: duration,
+      ease: ease,
+      onComplete: () => {
+        this.xbShow(target);
+        turnEl.remove();
+        if (onDone) onDone();
+      },
+    });
+  }
+
+  turnSpread(direction) {
+    this.riffling = false;
+    this.xbTurn(direction, 0.85, this.easeReady ? 'pageTurn' : 'power2.inOut', () => {
+      if (this.state.page !== this.bookIndex || this.state.editing) {
+        this.setState({ page: this.bookIndex, editing: false });
+      }
+    });
+  }
+
+  goSpread(i) {
+    if (i === this.bookIndex) return;
+    this.riffling = false;
+    const dir = i > this.bookIndex ? 'next' : 'prev';
+    this.xbTurn(dir, 0.85, this.easeReady ? 'pageTurn' : 'power2.inOut', () => {
+      if (this.state.page !== this.bookIndex || this.state.editing) {
+        this.setState({ page: this.bookIndex, editing: false });
+      }
+    }, i);
+  }
+
+  // Opening riffle: fast blur-assisted flick through the whole book, landing
+  // back on page one.
+  xbRiffle(step) {
+    const book = this.bookEl();
+    const n = this.spreads().length;
+    if (!book || !this.riffling || step >= n) {
+      this.riffling = false;
+      if (book) book.classList.remove('xb-blur-light', 'xb-blur-heavy');
+      return;
+    }
+    const bell = Math.sin(Math.PI * step / (n - 1));
+    book.classList.toggle('xb-blur-light', bell > 0.25 && bell <= 0.6);
+    book.classList.toggle('xb-blur-heavy', bell > 0.6);
+    this.xbTurn('next', 0.2 - 0.15 * bell, 'none', () => this.xbRiffle(step + 1));
   }
 
   renderVals() {
@@ -534,23 +571,19 @@ class Component extends DCLogic {
       bookTitle: title,
       subline: this.names() + ' · ' + dirLabel + ' · ' + t.pages,
 
-      spread,
-      pageLabel: 'Page ' + (this.state.page + 1) + ' of ' + list.length,
-      onPrev: () => this.turn(-1),
-      onNext: () => this.turn(1),
+      onPrev: () => this.turnSpread('prev'),
+      onNext: () => this.turnSpread('next'),
 
       editing: this.state.editing,
-      reading: !this.state.editing && !this.state.generating,
-      generatingView: this.state.generating,
       genErrorView: !!this.state.genError && !this.state.generating,
       genErrorMessage: this.state.genError || '',
       draft: this.state.draft,
       onDraft: (e) => this.setState({ draft: e.target.value }),
       editLabel: this.state.editing ? 'Save this line' : 'Rewrite this line',
       editBtnStyle: {
-        border: '2px solid ' + (this.state.editing ? 'var(--color-cta)' : 'var(--color-text)'),
+        border: '2px solid ' + (this.state.editing ? 'var(--color-accent)' : 'rgba(240,230,211,0.7)'),
         background: this.state.editing ? 'var(--color-cta)' : 'transparent',
-        color: this.state.editing ? 'var(--color-bg)' : 'var(--color-text)',
+        color: this.state.editing ? 'var(--color-bg)' : '#f0e6d3',
         fontFamily: 'var(--font-heading)', fontWeight: '800', fontSize: '11px',
         letterSpacing: '0.1em', textTransform: 'uppercase', padding: '9px 13px',
         cursor: 'pointer', whiteSpace: 'nowrap', transition: 'background .2s ease, color .2s ease',
@@ -568,7 +601,7 @@ class Component extends DCLogic {
       thumbs: list.map((s, i) => ({
         no: String(i + 1).padStart(2, '0'),
         label: i === list.length - 1 ? 'End' : s.chapter.replace('Chapter ', 'Ch. '),
-        onGo: () => this.goTo(i),
+        onGo: () => this.goSpread(i),
         style: {
           appearance: 'none', cursor: 'pointer', padding: '10px 13px', textAlign: 'left',
           background: i === this.state.page ? '#ffe1d0' : 'transparent',
