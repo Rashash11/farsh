@@ -28,19 +28,19 @@ app.post('/api/generate-book', async (req, res) => {
     return res.status(400).json({ error: 'missing_audience', message: 'Request body must include "audience".' });
   }
 
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) {
-    return res.status(400).json({
-      error: 'missing_api_key',
-      message: 'No ANTHROPIC_API_KEY configured. Copy .env.example to .env, add your key, and restart the server.',
-    });
-  }
-
   try {
-    const pages = await generateBookPages(book, apiKey);
+    // Explicit .env key preferred; otherwise the SDK's own credential
+    // resolution (auth token / `ant auth login` profile) gets a chance.
+    const pages = await generateBookPages(book, process.env.ANTHROPIC_API_KEY);
     res.json({ pages });
   } catch (err) {
     console.error('[generate-book] failed:', err.message);
+    if (err.message === 'missing_api_key' || err.status === 401 || /Could not resolve authentication/.test(err.message)) {
+      return res.status(400).json({
+        error: 'missing_api_key',
+        message: 'No ANTHROPIC_API_KEY configured. Copy .env.example to .env, add your key, and restart the server.',
+      });
+    }
     const status = /^generation_refused/.test(err.message) ? 422 : 502;
     res.status(status).json({
       error: 'generation_failed',
