@@ -14,15 +14,26 @@ require('dotenv').config();
 const path = require('path');
 const express = require('express');
 const { generateBookPages } = require('./lib/generateBook');
+const { checkRateLimit } = require('./lib/rateLimit');
 
 const app = express();
 const PORT = process.env.PORT || 4000;
+
+// Behind a reverse proxy / hosting platform, use the forwarded client IP
+// so rate limits apply per visitor rather than per proxy.
+app.set('trust proxy', 1);
 
 app.use(express.json({ limit: '256kb' }));
 
 app.get('/', (req, res) => res.redirect('/Landing Page.dc.html'));
 
 app.post('/api/generate-book', async (req, res) => {
+  const limited = checkRateLimit(req.ip || 'unknown');
+  if (limited) {
+    res.set('Retry-After', String(limited.retryAfterSeconds));
+    return res.status(limited.status).json({ error: limited.error, message: limited.message });
+  }
+
   const book = req.body && typeof req.body === 'object' ? req.body : {};
   if (!book.audience) {
     return res.status(400).json({ error: 'missing_audience', message: 'Request body must include "audience".' });
