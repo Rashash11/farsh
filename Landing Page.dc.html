@@ -199,7 +199,7 @@
       <sc-for list="{{ books }}" as="book" hint-placeholder-count="6">
         <a href="{{ book.href }}" data-flip data-reveal="stagger" style="position:relative;display:block;text-decoration:none;color:var(--color-text);background:var(--color-bg);border-right:2px solid var(--color-divider);border-bottom:2px solid var(--color-divider);" style-hover="background:var(--color-accent-100);">
           <div style="position:relative;aspect-ratio:3/4;background:var(--color-accent-100);perspective:1600px;overflow:hidden;">
-            <div style="position:absolute;inset:0;padding:20px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:flex-end;gap:10px;">
+            <div style="position:absolute;inset:0;padding:20px 20px 20px 42%;box-sizing:border-box;display:flex;flex-direction:column;justify-content:flex-end;gap:10px;">
               <div style="font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:var(--color-accent-700);">Page one</div>
               <div style="font-family:var(--font-heading);font-weight:800;font-size:clamp(15px,1.5vw,19px);line-height:1.2;letter-spacing:-0.02em;color:var(--color-accent-900);text-wrap:pretty;">{{ book.line }}</div>
             </div>
@@ -475,7 +475,7 @@ class Component extends DCLogic {
       });
       cover.appendChild(back);
       cover.style.transition = 'transform .85s cubic-bezier(.16,1,.3,1)';
-      const open = () => { cover.style.transform = 'rotateY(-165deg)'; cover.style.boxShadow = 'var(--shadow-lg)'; };
+      const open = () => { cover.style.transform = 'rotateY(-68deg)'; cover.style.boxShadow = 'var(--shadow-lg)'; };
       const close = () => { cover.style.transform = 'rotateY(0deg)'; cover.style.boxShadow = 'none'; };
       card.addEventListener('mouseenter', open);
       card.addEventListener('mouseleave', close);
