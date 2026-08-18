@@ -177,17 +177,22 @@
             <div style="font-size:12px;letter-spacing:0.18em;text-transform:uppercase;opacity:0.85;margin-bottom:18px;">Order {{ orderNo }}</div>
             <h1 style="font-family:var(--font-heading);font-weight:800;font-size:clamp(32px,5vw,68px);line-height:0.92;letter-spacing:-0.045em;margin:0 0 20px;max-width:20ch;">{{ doneLine }}</h1>
             <p style="font-size:17px;line-height:1.6;margin:0 0 14px;max-width:46ch;opacity:0.92;">{{ doneBlurb }}</p>
+            <sc-if value="{{ painting }}" hint-placeholder-val="{{ false }}">
+              <p style="font-size:14px;margin:14px 0 0;opacity:0.85;">Your illustrations are being painted — {{ paintingJoke }}</p>
+            </sc-if>
             <p style="font-size:14px;letter-spacing:0.02em;margin:0;opacity:0.85;">"{{ bookTitle }}" · {{ names }}</p>
           </div>
           <div style="display:flex;align-items:flex-start;gap:22px;flex-shrink:0;">
             <div style="width:112px;flex-shrink:0;animation:stampIn .55s cubic-bezier(.16,1,.3,1) .08s both;">
               <div style="{{ confirmCoverStyle }}">
-                <span style="font-size:8px;letter-spacing:0.16em;text-transform:uppercase;opacity:0.8;">Farsh!</span>
-                <div>
-                  <div style="font-family:var(--font-heading);font-weight:800;font-size:14px;line-height:1.08;letter-spacing:-0.02em;">{{ bookTitle }}</div>
-                  <div style="height:2px;margin:7px 0;background:currentColor;opacity:0.9;"></div>
-                  <div style="font-size:8px;letter-spacing:0.1em;text-transform:uppercase;opacity:0.9;">{{ names }}</div>
-                </div>
+                <sc-if value="{{ noCoverArt }}" hint-placeholder-val="{{ true }}">
+                  <span style="font-size:8px;letter-spacing:0.16em;text-transform:uppercase;opacity:0.8;">Farsh!</span>
+                  <div>
+                    <div style="font-family:var(--font-heading);font-weight:800;font-size:14px;line-height:1.08;letter-spacing:-0.02em;">{{ bookTitle }}</div>
+                    <div style="height:2px;margin:7px 0;background:currentColor;opacity:0.9;"></div>
+                    <div style="font-size:8px;letter-spacing:0.1em;text-transform:uppercase;opacity:0.9;">{{ names }}</div>
+                  </div>
+                </sc-if>
               </div>
             </div>
             <div data-sticker data-rot="-7" style="background:var(--color-bg);color:var(--color-accent-700);border:2px solid var(--color-accent-700);font-family:var(--font-heading);font-weight:800;font-size:13px;letter-spacing:0.14em;text-transform:uppercase;padding:14px 18px;box-shadow:var(--shadow-md);transform:rotate(-7deg);animation:stampIn .5s cubic-bezier(.16,1,.3,1) both;">At the bindery</div>
@@ -271,10 +276,21 @@ const THEME = {
   },
 };
 
+// Shown one at a time, rotating, while the plates are being painted --
+// same lines as Book Preview's writing-wait joke cycle.
+const JOKES = [
+  'Teaching the dragon to spell your name...',
+  'Double-checking the garden wall is scary enough...',
+  'Bribing the illustrator with a cookie...',
+  'Making sure nobody sneezes on page 4...',
+  'Arguing with the editor about the ending...',
+  'Counting how many times "and then" was used...',
+];
+
 class Component extends DCLogic {
   state = {
     audience: 'child', format: 1, speed: 'Standard · 5 days', gift: false,
-    placed: false, order: '', book: null, ship: {},
+    placed: false, order: '', book: null, ship: {}, painting: false, jokeIdx: 0,
   };
 
   componentDidMount() {
@@ -291,6 +307,7 @@ class Component extends DCLogic {
     if (this.onMove) window.removeEventListener('mousemove', this.onMove);
     if (this.ring && this.ring.parentNode) this.ring.parentNode.removeChild(this.ring);
     if (this.rafC) cancelAnimationFrame(this.rafC);
+    if (this.jokeTimer) clearInterval(this.jokeTimer);
   }
 
   reduced() { return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches; }
@@ -371,6 +388,30 @@ class Component extends DCLogic {
   ship(key, val) { this.setState({ ship: { ...this.state.ship, [key]: val } }); }
 
   money(n) { return '$' + n; }
+
+  async paintPlates() {
+    const book = this.state.book;
+    if (!book || !book.characterSheetUrl || (Array.isArray(book.plateUrls) && book.plateUrls.some(Boolean))) return;
+    this.setState({ painting: true, jokeIdx: 0 });
+    if (!this.reduced()) {
+      this.jokeTimer = setInterval(() => this.setState({ jokeIdx: this.state.jokeIdx + 1 }), 1400);
+    }
+    try {
+      const res = await fetch('/api/generate-plates', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ book }),
+      });
+      const json = await res.json().catch(() => ({}));
+      const plateUrls = Array.isArray(json.plateUrls) ? json.plateUrls : [];
+      const updated = { ...book, plateUrls };
+      try { localStorage.setItem('farsh.book', JSON.stringify(updated)); } catch (e) {}
+      this.setState({ book: updated, painting: false });
+    } catch (e) {
+      this.setState({ painting: false });
+    } finally {
+      if (this.jokeTimer) { clearInterval(this.jokeTimer); this.jokeTimer = null; }
+    }
+  }
 
   renderVals() {
     const a = this.state.audience;
@@ -475,12 +516,17 @@ class Component extends DCLogic {
       coverRuleStyle: { height: '2px', margin: '12px 0', background: 'currentColor', opacity: '0.9' },
       bookTitle: title,
       names,
+      noCoverArt: !(this.state.book && this.state.book.coverUrl),
       confirmCoverStyle: {
         aspectRatio: '3/4', padding: '12px 14px', boxSizing: 'border-box',
         display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
         background: t.coverBg, color: t.coverInk,
         border: '2px solid ' + t.coverEdge,
         transform: 'rotate(' + t.tilt + ')', boxShadow: 'var(--shadow-md)',
+        ...(this.state.book && this.state.book.coverUrl ? {
+          backgroundImage: 'url(' + this.state.book.coverUrl + ')',
+          backgroundSize: 'cover', backgroundPosition: 'center',
+        } : {}),
       },
 
       lines: [
@@ -496,9 +542,12 @@ class Component extends DCLogic {
         const no = 'FA-' + String(Math.floor(1000 + Math.random() * 8999));
         this.setState({ placed: true, order: no });
         window.scrollTo({ top: 0, behavior: 'smooth' });
+        this.paintPlates();
       },
 
       orderNo: this.state.order || 'FA-0000',
+      painting: !!this.state.painting,
+      paintingJoke: JOKES[this.state.jokeIdx % JOKES.length],
       doneStyle: {
         background: t.doneBg, color: a === 'family' ? '#f2f7e6' : '#fff2eb',
         padding: 'clamp(36px,4.6vw,80px) clamp(20px,3vw,44px)',
