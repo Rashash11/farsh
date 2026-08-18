@@ -133,7 +133,12 @@
 
     <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-top:18px;">
       <div data-book-caption style="font-size:12px;letter-spacing:0.14em;text-transform:uppercase;color:rgba(240,230,211,0.8);"></div>
-      <button onClick="{{ onEdit }}" style="{{ editBtnStyle }}">{{ editLabel }}</button>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <button onClick="{{ onEdit }}" style="{{ editBtnStyle }}">{{ editLabel }}</button>
+        <sc-if value="{{ hasGeneratedPlate }}" hint-placeholder-val="{{ false }}">
+          <button onClick="{{ onRedraw }}" style="border:2px solid var(--color-text);background:var(--color-bg);color:var(--color-text);font-family:var(--font-heading);font-weight:800;font-size:12px;letter-spacing:0.06em;text-transform:uppercase;padding:10px 14px;cursor:pointer;">{{ redrawLabel }}</button>
+        </sc-if>
+      </div>
     </div>
     <div style="font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:rgba(240,230,211,0.6);text-align:center;margin-top:8px;">Final illustrations are painted after you approve</div>
 
@@ -223,7 +228,7 @@ const JOKES = [
 ];
 
 class Component extends DCLogic {
-  state = { audience: 'child', page: 0, editing: false, draft: '', edits: {}, book: null, generating: false, genError: null, jokeIdx: 0, paintingCover: false };
+  state = { audience: 'child', page: 0, editing: false, draft: '', edits: {}, book: null, generating: false, genError: null, jokeIdx: 0, paintingCover: false, redrawing: false };
 
   componentDidMount() {
     let book = null;
@@ -462,12 +467,13 @@ class Component extends DCLogic {
       ],
     };
     const genPages = (this.state.book && Array.isArray(this.state.book.pages)) ? this.state.book.pages : null;
+    const gen = (this.state.book && Array.isArray(this.state.book.plateUrls)) ? this.state.book.plateUrls : [];
     return (sets[a] || sets.child).map((s, i) => ({
       ...s,
-      img: PLATES[i % PLATES.length],
+      img: gen[i] || PLATES[i % PLATES.length],
       imgStyle: {
         width: '100%', height: '100%',
-        backgroundImage: 'url("' + PLATES[i % PLATES.length] + '")',
+        backgroundImage: 'url("' + (gen[i] || PLATES[i % PLATES.length]) + '")',
         backgroundSize: 'cover', backgroundPosition: 'center',
       },
       alt: 'Illustrated page ' + (i + 1),
@@ -477,6 +483,28 @@ class Component extends DCLogic {
       // finished yet (or failed) so the page is never blank.
       text: this.state.edits[a + ':' + i] || (genPages && genPages[i]) || s.text,
     }));
+  }
+
+  async redrawPage() {
+    const book = this.state.book, i = this.state.page;
+    if (!book || this.state.redrawing) return;
+    this.setState({ redrawing: true });
+    try {
+      const res = await fetch('/api/redraw-page', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ book, pageIndex: i }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (json.plateUrl) {
+        const plateUrls = [...(book.plateUrls || [])]; plateUrls[i] = json.plateUrl;
+        const updated = { ...book, plateUrls };
+        try { localStorage.setItem('farsh.book', JSON.stringify(updated)); } catch (e) {}
+        this.setState({ book: updated, redrawing: false });
+        this.paintBook();
+        return;
+      }
+      this.setState({ redrawing: false });
+    } catch (e) { this.setState({ redrawing: false }); }
   }
 
   // ---- Page-flip book engine (adapted from Hank-D-Tank/x-book, GSAP) ----
@@ -681,6 +709,10 @@ class Component extends DCLogic {
           this.setState({ editing: true, draft: spread.text });
         }
       },
+
+      hasGeneratedPlate: !!(this.state.book && this.state.book.plateUrls && this.state.book.plateUrls[this.state.page]),
+      onRedraw: () => this.redrawPage(),
+      redrawLabel: this.state.redrawing ? 'Repainting…' : 'Redraw this picture',
 
       thumbs: list.map((s, i) => ({
         no: String(i + 1).padStart(2, '0'),
