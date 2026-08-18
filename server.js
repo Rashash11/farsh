@@ -42,8 +42,8 @@ app.post('/api/generate-book', async (req, res) => {
   try {
     // Explicit .env key preferred; otherwise the SDK's own credential
     // resolution (auth token / `ant auth login` profile) gets a chance.
-    const pages = await generateBookPages(book, process.env.ANTHROPIC_API_KEY);
-    res.json({ pages });
+    const { pages, scenes } = await generateBookPages(book, process.env.ANTHROPIC_API_KEY);
+    res.json({ pages, scenes });
   } catch (err) {
     console.error('[generate-book] failed:', err.message);
     if (err.message === 'missing_api_key' || err.status === 401 || /Could not resolve authentication/.test(err.message)) {

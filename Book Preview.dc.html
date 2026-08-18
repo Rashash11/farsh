@@ -368,7 +368,7 @@ class Component extends DCLogic {
       if (!res.ok || !Array.isArray(json.pages)) {
         throw new Error((json && json.message) || 'Could not write the book right now.');
       }
-      const updated = { ...book, pages: json.pages, pagesFor: fp };
+      const updated = { ...book, pages: json.pages, scenes: Array.isArray(json.scenes) ? json.scenes : [], pagesFor: fp };
       try { localStorage.setItem('farsh.book', JSON.stringify(updated)); } catch (e) {}
       this.setState({ book: updated, generating: false, genError: null });
     } catch (e) {

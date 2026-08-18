@@ -28,8 +28,8 @@ module.exports = async (req, res) => {
   }
 
   try {
-    const pages = await generateBookPages(book, process.env.ANTHROPIC_API_KEY);
-    res.status(200).json({ pages });
+    const { pages, scenes } = await generateBookPages(book, process.env.ANTHROPIC_API_KEY);
+    res.status(200).json({ pages, scenes });
   } catch (err) {
     console.error('[generate-book] failed:', err.message);
     if (err.message === 'missing_api_key' || err.status === 401 || /Could not resolve authentication/.test(err.message)) {
