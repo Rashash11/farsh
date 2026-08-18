@@ -65,21 +65,24 @@
     @keyframes nudge { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(4px); } }
     @keyframes floatBook { 0%, 100% { transform: rotate(-2.5deg) translateY(0); } 50% { transform: rotate(-1.8deg) translateY(-12px); } }
     @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; } }
+    @media (max-width: 900px) { .nav-tagline, .nav-secondary-links { display: none !important; } }
   </style>
 </helmet>
 
 <div class="page-sheet" style="max-width:1440px;margin:0 auto;border-left:2px solid var(--color-divider);border-right:2px solid var(--color-divider);min-height:100vh;overflow-x:clip;">
 
-  <nav style="position:sticky;top:0;z-index:50;display:flex;align-items:center;justify-content:space-between;gap:20px;padding:16px clamp(16px,3vw,40px);background:color-mix(in srgb, var(--color-bg) 92%, transparent);backdrop-filter:blur(8px);border-bottom:2px solid var(--color-divider);">
-    <div style="display:flex;align-items:baseline;gap:12px;">
-      <span style="font-family:var(--font-heading);font-weight:800;font-size:24px;letter-spacing:-0.04em;">farsh<span style="color:var(--color-accent);">!</span></span>
-      <span style="font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:var(--color-neutral-600);">Books with your people in them</span>
+  <nav style="position:sticky;top:0;z-index:50;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px clamp(16px,3vw,40px);background:color-mix(in srgb, var(--color-bg) 92%, transparent);backdrop-filter:blur(8px);border-bottom:2px solid var(--color-divider);">
+    <div style="display:flex;align-items:baseline;gap:12px;min-width:0;">
+      <span style="font-family:var(--font-heading);font-weight:800;font-size:24px;letter-spacing:-0.04em;flex-shrink:0;">farsh<span style="color:var(--color-accent);">!</span></span>
+      <span class="nav-tagline" style="font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:var(--color-neutral-600);white-space:nowrap;">Books with your people in them</span>
     </div>
-    <div style="display:flex;align-items:center;gap:clamp(14px,2vw,26px);">
-      <a href="#books" style="font-size:13px;letter-spacing:0.06em;text-transform:uppercase;color:var(--color-text);border-bottom:2px solid transparent;transition:border-color .2s ease,color .2s ease;" style-hover="border-color:var(--color-accent);color:var(--color-accent-700);">Books</a>
-      <a href="#read" style="font-size:13px;letter-spacing:0.06em;text-transform:uppercase;color:var(--color-text);border-bottom:2px solid transparent;transition:border-color .2s ease,color .2s ease;" style-hover="border-color:var(--color-accent);color:var(--color-accent-700);">Read a page</a>
-      <a href="#how" style="font-size:13px;letter-spacing:0.06em;text-transform:uppercase;color:var(--color-text);border-bottom:2px solid transparent;transition:border-color .2s ease,color .2s ease;" style-hover="border-color:var(--color-accent);color:var(--color-accent-700);">How it works</a>
-      <a href="{{ builderHref }}" style="background:var(--color-cta);color:var(--color-bg);font-family:var(--font-heading);font-weight:800;font-size:13px;letter-spacing:0.04em;text-transform:uppercase;padding:12px 20px;transition:background .2s ease;" style-hover="background:var(--color-cta-hover);">{{ ctaLabel }}</a>
+    <div style="display:flex;align-items:center;gap:clamp(14px,2vw,26px);flex-shrink:0;">
+      <div class="nav-secondary-links" style="display:flex;align-items:center;gap:clamp(14px,2vw,26px);">
+        <a href="#books" style="font-size:13px;letter-spacing:0.06em;text-transform:uppercase;color:var(--color-text);border-bottom:2px solid transparent;white-space:nowrap;transition:border-color .2s ease,color .2s ease;" style-hover="border-color:var(--color-accent);color:var(--color-accent-700);">Books</a>
+        <a href="#read" style="font-size:13px;letter-spacing:0.06em;text-transform:uppercase;color:var(--color-text);border-bottom:2px solid transparent;white-space:nowrap;transition:border-color .2s ease,color .2s ease;" style-hover="border-color:var(--color-accent);color:var(--color-accent-700);">Read a page</a>
+        <a href="#how" style="font-size:13px;letter-spacing:0.06em;text-transform:uppercase;color:var(--color-text);border-bottom:2px solid transparent;white-space:nowrap;transition:border-color .2s ease,color .2s ease;" style-hover="border-color:var(--color-accent);color:var(--color-accent-700);">How it works</a>
+      </div>
+      <a href="{{ builderHref }}" style="background:var(--color-cta);color:var(--color-bg);font-family:var(--font-heading);font-weight:800;font-size:13px;letter-spacing:0.04em;text-transform:uppercase;padding:12px 20px;white-space:nowrap;transition:background .2s ease;" style-hover="background:var(--color-cta-hover);">{{ ctaLabel }}</a>
     </div>
   </nav>
 

@@ -68,14 +68,14 @@
 <div style="{{ shellStyle }}">
 <div class="page-sheet" style="max-width:1440px;margin:0 auto;border-left:2px solid var(--color-divider);border-right:2px solid var(--color-divider);min-height:100vh;">
 
-  <nav style="display:flex;align-items:center;justify-content:space-between;gap:20px;padding:16px clamp(16px,3vw,40px);border-bottom:2px solid var(--color-divider);">
+  <nav style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px 20px;padding:16px clamp(16px,3vw,40px);border-bottom:2px solid var(--color-divider);">
     <div style="display:flex;align-items:baseline;gap:14px;">
       <a href="./Landing Page.dc.html" style="font-family:var(--font-heading);font-weight:800;font-size:24px;letter-spacing:-0.04em;color:var(--color-text);">farsh<span style="color:var(--color-accent);">!</span></a>
-      <span style="font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:var(--color-neutral-600);">{{ modeLabel }}</span>
+      <span style="font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:var(--color-neutral-600);white-space:nowrap;">{{ modeLabel }}</span>
     </div>
     <div style="display:flex;align-items:center;gap:20px;">
-      <span style="font-size:12px;letter-spacing:0.12em;text-transform:uppercase;color:var(--color-neutral-600);">Step {{ stepNo }} of 4</span>
-      <a href="./Landing Page.dc.html" style="font-size:12px;letter-spacing:0.1em;text-transform:uppercase;color:var(--color-text);border-bottom:2px solid transparent;transition:border-color .2s ease;" style-hover="border-color:var(--color-accent);">Leave</a>
+      <span style="font-size:12px;letter-spacing:0.12em;text-transform:uppercase;color:var(--color-neutral-600);white-space:nowrap;">Step {{ stepNo }} of 4</span>
+      <a href="./Landing Page.dc.html" style="font-size:12px;letter-spacing:0.1em;text-transform:uppercase;color:var(--color-text);border-bottom:2px solid transparent;white-space:nowrap;transition:border-color .2s ease;" style-hover="border-color:var(--color-accent);">Leave</a>
     </div>
   </nav>
 
@@ -89,7 +89,7 @@
     </sc-for>
   </div>
 
-  <div style="display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);">
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));">
 
     <div data-panel style="padding:clamp(26px,3.4vw,52px) clamp(20px,3vw,44px) clamp(30px,3.4vw,48px);border-right:2px solid var(--color-divider);min-width:0;">
 
