@@ -200,8 +200,20 @@ const THEME = {
 const PLATES = ['uploads/pages/waking-up.jpg', 'uploads/pages/meeting-favorite.jpg', 'uploads/pages/saving-the-day.jpg',
   'uploads/covers/great-adventure.jpg', 'uploads/covers/under-the-sea.jpg', 'uploads/covers/goodnight-little-one.jpg'];
 
+// Shown one at a time, rotating, while the real story is being written --
+// turns the wait itself into the funniest part of the page instead of a
+// blank "Writing your book..." line.
+const JOKES = [
+  'Teaching the dragon to spell your name...',
+  'Double-checking the garden wall is scary enough...',
+  'Bribing the illustrator with a cookie...',
+  'Making sure nobody sneezes on page 4...',
+  'Arguing with the editor about the ending...',
+  'Counting how many times "and then" was used...',
+];
+
 class Component extends DCLogic {
-  state = { audience: 'child', page: 0, editing: false, draft: '', edits: {}, book: null, generating: false, genError: null };
+  state = { audience: 'child', page: 0, editing: false, draft: '', edits: {}, book: null, generating: false, genError: null, jokeIdx: 0 };
 
   componentDidMount() {
     let book = null;
@@ -239,6 +251,7 @@ class Component extends DCLogic {
     if (this.ring && this.ring.parentNode) this.ring.parentNode.removeChild(this.ring);
     if (this.rafC) cancelAnimationFrame(this.rafC);
     if (this.riffleTimer) clearTimeout(this.riffleTimer);
+    if (this.jokeTimer) clearInterval(this.jokeTimer);
   }
 
   reduced() { return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches; }
@@ -341,7 +354,10 @@ class Component extends DCLogic {
   }
 
   async generate(book, fp) {
-    this.setState({ generating: true, genError: null });
+    this.setState({ generating: true, genError: null, jokeIdx: 0 });
+    if (!this.reduced()) {
+      this.jokeTimer = setInterval(() => this.setState({ jokeIdx: this.state.jokeIdx + 1 }), 1400);
+    }
     try {
       const res = await fetch('/api/generate-book', {
         method: 'POST',
@@ -357,6 +373,8 @@ class Component extends DCLogic {
       this.setState({ book: updated, generating: false, genError: null });
     } catch (e) {
       this.setState({ generating: false, genError: (e && e.message) || 'Could not write the book right now.' });
+    } finally {
+      if (this.jokeTimer) { clearInterval(this.jokeTimer); this.jokeTimer = null; }
     }
   }
 
@@ -426,8 +444,10 @@ class Component extends DCLogic {
       '</div>';
     }
     const writing = this.state.generating;
+    const joke = JOKES[this.state.jokeIdx % JOKES.length];
     const body = writing
-      ? '<p style="font-family:var(--font-heading);font-weight:400;font-size:clamp(13px,1.6vw,22px);line-height:1.35;letter-spacing:-0.02em;margin:0;color:var(--color-neutral-600);font-style:italic;">Writing your book\u2026</p>'
+      ? '<p style="font-family:var(--font-heading);font-weight:400;font-size:clamp(13px,1.6vw,22px);line-height:1.35;letter-spacing:-0.02em;margin:0 0 8px;color:var(--color-neutral-600);font-style:italic;">Writing your book\u2026</p>' +
+        '<p style="font-size:clamp(11px,1.1vw,14px);line-height:1.4;margin:0;color:var(--color-accent-700);">' + this.esc(joke) + '</p>'
       : '<p style="font-family:var(--font-heading);font-weight:400;font-size:clamp(13px,1.6vw,22px);line-height:1.35;letter-spacing:-0.02em;margin:0;color:var(--color-text);">' + this.esc(s.text) + '</p>';
     return '<div class="xb-pg xb-pg-text">' +
       '<div style="font-size:clamp(9px,1vw,11px);letter-spacing:0.18em;text-transform:uppercase;color:var(--color-accent-700);">' + this.esc(s.chapter) + '</div>' +

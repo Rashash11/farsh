@@ -316,11 +316,20 @@ class Component extends DCLogic {
   };
 
   componentDidMount() {
-    const q = new URLSearchParams(location.search).get('for');
+    const params = new URLSearchParams(location.search);
+    const q = params.get('for');
     const seed = this.props.startAudience;
     const map = { child: 'child', couple: 'couple', family: 'family', kid: 'child', two: 'couple' };
     const pick = map[q] || map[(seed || '').toLowerCase()] || null;
     if (pick && pick !== this.state.audience) this.setState({ audience: pick });
+    // Carry a name typed on the landing page hero straight into "Their
+    // name" here, so that first spark of personalization doesn't reset.
+    const audience = pick || this.state.audience;
+    const nameFromQuery = (params.get('name') || '').trim();
+    if (nameFromQuery && !(this.state.data[audience] || {}).name) {
+      const data = { ...this.state.data, [audience]: { ...this.state.data[audience], name: nameFromQuery } };
+      this.setState({ data });
+    }
     this.bindAll();
     this.setupCursor();
   }
@@ -619,7 +628,7 @@ class Component extends DCLogic {
       dedication: this.state.dedication,
       onDedication: (e) => this.setState({ dedication: e.target.value }),
       dedicationHint: {
-        child: 'For Amara, who asks better questions than we do.',
+        child: 'For ' + (v.name || 'Amara') + ', who asks better questions than we do.',
         couple: 'For you. Still the best decision I made.',
         family: 'For all of us, and the ones who came before.',
       }[a],

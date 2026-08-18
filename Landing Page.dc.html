@@ -106,6 +106,10 @@
         <span style="display:inline-flex;align-items:center;gap:8px;font-size:12px;letter-spacing:0.1em;text-transform:uppercase;color:var(--color-accent-700);padding-bottom:14px;">Live<span style="display:inline-block;animation:nudge 1.6s ease-in-out infinite;">→</span></span>
       </div>
 
+      <sc-if value="{{ showTitleTeaser }}" hint-placeholder-val="{{ false }}">
+        <p style="font-size:14px;color:var(--color-neutral-800);margin:-18px 0 26px;animation:riseIn .5s cubic-bezier(.16,1,.3,1) both;">Their book, so far: <strong style="color:var(--color-text);">{{ titleTeaser }}</strong></p>
+      </sc-if>
+
       <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:center;animation:riseIn .8s cubic-bezier(.16,1,.3,1) .82s both;">
         <a href="{{ builderHref }}" style="background:var(--color-cta);color:var(--color-bg);font-family:var(--font-heading);font-weight:800;font-size:14px;letter-spacing:0.04em;text-transform:uppercase;padding:17px 30px;transition:background .2s ease,letter-spacing .3s ease;" style-hover="background:var(--color-cta-hover);letter-spacing:0.1em;">{{ ctaLabel }}</a>
         <a href="#read" style="border:2px solid var(--color-text);color:var(--color-text);font-family:var(--font-heading);font-weight:800;font-size:14px;letter-spacing:0.04em;text-transform:uppercase;padding:15px 26px;display:inline-flex;align-items:center;gap:10px;transition:background .2s ease,color .2s ease;" style-hover="background:var(--color-text);color:var(--color-bg);">Read a page first<span style="display:inline-block;animation:floatArrow 1.8s ease-in-out infinite;">↓</span></a>
@@ -719,6 +723,8 @@ class Component extends DCLogic {
     const nameDisplay = raw || 'your kid';
     const occasion = this.state.occasion;
     const audience = this.state.audience;
+    // Carried into the builder link so a name typed here doesn't reset.
+    const nameParam = raw ? '&name=' + encodeURIComponent(raw) : '';
 
     const childBooks = [
       { title: 'The Great Adventure', meta: 'Ages 4–8 · 32 pages', occ: 'Birthday', kind: 'photo', img: 'uploads/covers/great-adventure.jpg', line: 'The morning ' + nameDisplay + ' found a door in the garden wall.' },
@@ -779,6 +785,8 @@ class Component extends DCLogic {
     return {
       name: this.state.name,
       nameDisplay,
+      showTitleTeaser: !!raw,
+      titleTeaser: raw + ' and the door in the garden wall',
       nameUpper: (raw || 'Amara').toUpperCase(),
       onName: (e) => this.setState({ name: e.target.value }),
       galleryTitle: occasion === 'All books'
@@ -802,9 +810,9 @@ class Component extends DCLogic {
           backgroundImage: b.img ? 'url("' + b.img + '")' : 'none',
           backgroundSize: 'cover', backgroundPosition: 'center',
         },
-        href: './Book Builder.dc.html?for=' + ({ 'For a child': 'child', 'For two of you': 'couple', 'For the whole family': 'family' }[audience] || 'child'),
+        href: './Book Builder.dc.html?for=' + ({ 'For a child': 'child', 'For two of you': 'couple', 'For the whole family': 'family' }[audience] || 'child') + nameParam,
       })),
-      builderHref: './Book Builder.dc.html?for=' + ({ 'For a child': 'child', 'For two of you': 'couple', 'For the whole family': 'family' }[audience] || 'child'),
+      builderHref: './Book Builder.dc.html?for=' + ({ 'For a child': 'child', 'For two of you': 'couple', 'For the whole family': 'family' }[audience] || 'child') + nameParam,
       ctaLabel: { 'For a child': "Build my kid's book", 'For two of you': 'Build our book', 'For the whole family': 'Build our family book' }[audience] || "Build my kid's book",
       spread: (() => {
         const s = this.spreads()[this.state.page];
