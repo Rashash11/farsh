@@ -31,8 +31,20 @@ read from `.env` once at startup.
 - **"Place the order" on Checkout is a UI simulation**, same as before this
   work — it shows a confirmation and a fake order number, but doesn't charge
   a card or send anything anywhere. No payment processing is wired up.
-- **Covers and page photos** are the existing typographic covers /
-  photo-upload placeholders — no AI image generation.
+- **Cover and page art** is real too, when `GEMINI_API_KEY` is set — see
+  "Illustrations" below. Without a key, covers and pages show the original
+  typographic art, same silent fallback as story generation.
+
+## Illustrations
+
+Three endpoints paint the art: `POST /api/generate-cover`,
+`POST /api/generate-plates` (after Checkout), and `POST /api/redraw-page`.
+A builder photo drives the art when present, falling back to the
+character's text description if that pass fails (safety refusal, network
+error) — Preview shows a small note when it does. Without `GEMINI_API_KEY`,
+or on any Gemini failure, all three return null URLs and the stock
+typographic art stays put. `GEMINI_API_KEY` is required for art; Vercel
+deploys also need `BLOB_READ_WRITE_TOKEN` (locally: `uploads/generated/`).
 
 ## Project layout
 
