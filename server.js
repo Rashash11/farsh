@@ -65,8 +65,10 @@ app.post('/api/generate-cover', artJson, artRoute((book) => generateCoverArt(boo
 app.post('/api/generate-plates', artJson, artRoute((book) => generatePlates(book)));
 app.post('/api/redraw-page', artJson, artRoute((book, body) => redrawPlate(book, body.pageIndex)));
 
-// Everything else — in particular /api/generate-book, which never carries
-// photos — gets the smaller, app-wide body limit. Registered AFTER the art
+// Everything else — in particular /api/generate-book — gets the smaller,
+// app-wide body limit. The client strips art fields (photo, photoConsent,
+// characterSheetUrl, coverUrl, plateUrls) out of the book before posting
+// to this route, so it never carries photo data. Registered AFTER the art
 // routes above so it never runs for their requests (see ordering comment).
 app.use(express.json({ limit: '256kb' }));
 

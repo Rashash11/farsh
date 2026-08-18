@@ -44,6 +44,14 @@ test('cover prompt is portrait with calm top third', () => {
   assert.match(p, /top third/i);
 });
 
+test('photoSheetPrompt for a couple mentions both/two people and still ends with CONSTRAINTS', () => {
+  const couple = { audience: 'couple', direction: 0, data: { met: 'at a bus stop' } };
+  const p = photoSheetPrompt(couple);
+  assert.match(p, /\btwo\b/i);
+  assert.match(p, /people|characters/i);
+  assert.ok(p.trim().endsWith(CONSTRAINTS), p.slice(-120));
+});
+
 test('artFingerprint ignores name, changes with looks/direction/photo', () => {
   const fp = artFingerprint(child);
   assert.strictEqual(fp, artFingerprint({ ...child, data: { ...child.data, name: 'Zeus' } }));

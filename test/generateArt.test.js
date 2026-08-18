@@ -52,6 +52,17 @@ test('photo refusal falls back to description sheet', async () => {
   assert.ok(r.characterSheetUrl); // description path succeeded
 });
 
+test('photo refused AND description fails yields fellBackToDescription:false, nulls', async () => {
+  // Every call is a refusal (ok:true, no image part) — both the photo
+  // attempt and the description-path fallback fail, so nothing succeeded
+  // and the "illustrated from your description" note must not be shown.
+  const fetchFn = async () => ({ ok: true, status: 200, json: async () => ({ candidates: [{ finishReason: 'IMAGE_SAFETY', content: { parts: [] } }] }) });
+  const r = await generateCoverArt({ ...child, photo: 'data:image/jpeg;base64,/9j/AAAA' }, { fetchFn, saveFn: fakeSave });
+  assert.strictEqual(r.fellBackToDescription, false);
+  assert.strictEqual(r.characterSheetUrl, null);
+  assert.strictEqual(r.coverUrl, null);
+});
+
 test('total failure yields nulls, never throws', async () => {
   const fetchFn = async () => ({ ok: false, status: 500, json: async () => ({}) });
   const r = await generateCoverArt(child, { fetchFn, saveFn: fakeSave });
