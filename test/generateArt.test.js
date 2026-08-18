@@ -72,3 +72,57 @@ test('generatePlates produces 6 slots with nulls for failures', async () => {
   assert.strictEqual(r.plateUrls.length, 6);
   assert.ok(r.plateUrls.filter(Boolean).length >= 5);
 });
+
+// --- Review-fix coverage: malformed JSON, throwing saveFn, path traversal ---
+
+test('malformed JSON on first attempt is treated as a transport failure and retries', async () => {
+  let call = 0;
+  const fetchFn = async () => {
+    call++;
+    if (call === 1) {
+      // ok:true but the body is not valid JSON — res.json() throws.
+      return { ok: true, status: 200, json: async () => { throw new SyntaxError('Unexpected token'); } };
+    }
+    return { ok: true, status: 200, json: async () => ({ candidates: [{ content: { parts: [{ inlineData: { mimeType: 'image/png', data: PNG_B64 } }] } }] }) };
+  };
+  const r = await generateCoverArt(child, { fetchFn, saveFn: fakeSave });
+  assert.ok(r.characterSheetUrl.startsWith('/uploads/generated/'));
+  assert.ok(r.coverUrl.startsWith('/uploads/generated/'));
+});
+
+test('JSON parsing that always throws degrades to nulls, never throws', async () => {
+  const fetchFn = async () => ({
+    ok: true, status: 200,
+    json: async () => { throw new SyntaxError('Unexpected token'); },
+  });
+  // If genImage let this exception escape, this await would reject and fail the test.
+  const r = await generateCoverArt(child, { fetchFn, saveFn: fakeSave });
+  assert.strictEqual(r.characterSheetUrl, null);
+  assert.strictEqual(r.coverUrl, null);
+});
+
+test('a throwing saveFn degrades that slot to null, never throws', async () => {
+  const throwingSave = async () => { throw new Error('blob upload failed'); };
+  const r = await generateCoverArt(child, { fetchFn: okFetch(), saveFn: throwingSave });
+  assert.strictEqual(r.characterSheetUrl, null);
+  assert.strictEqual(r.coverUrl, null);
+});
+
+test('path traversal in characterSheetUrl is rejected, never throws', async () => {
+  const book = { ...child, characterSheetUrl: '/../.env', scenes: ['a', 'b', 'c', 'd', 'e', 'f'] };
+  const r = await generatePlates(book, { fetchFn: okFetch(), saveFn: fakeSave });
+  assert.strictEqual(r.plateUrls.length, 6);
+  assert.ok(r.plateUrls.every((u) => u === null));
+});
+
+test('path traversal to a file that actually exists outside uploads/generated is still rejected', async () => {
+  // '.env' doesn't exist in this repo, so the traversal test above would
+  // also pass against the OLD (unguarded) code by accident, via ENOENT
+  // hitting the pre-existing catch-all. package.json at the repo root does
+  // exist, so this is a real discriminator: unguarded code would have
+  // successfully read and forwarded it; the containment check must reject
+  // it before any read is attempted.
+  const book = { ...child, characterSheetUrl: '/package.json', scenes: ['a', 'b', 'c', 'd', 'e', 'f'] };
+  const r = await generatePlates(book, { fetchFn: okFetch(), saveFn: fakeSave });
+  assert.ok(r.plateUrls.every((u) => u === null));
+});
