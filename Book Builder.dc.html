@@ -131,6 +131,24 @@
               </label>
             </sc-for>
           </div>
+          <sc-if value="{{ showPhotoUpload }}" hint-placeholder-val="{{ false }}">
+            <div style="margin-top:18px;padding-top:16px;border-top:2px solid var(--color-divider);">
+              <span style="display:block;font-size:11px;letter-spacing:0.16em;text-transform:uppercase;color:var(--color-neutral-600);margin-bottom:8px;">Optional — a photo to draw them from</span>
+              <sc-if value="{{ hasPhoto }}" hint-placeholder-val="{{ false }}">
+                <div style="display:flex;align-items:center;gap:14px;">
+                  <div data-photo-thumb style="{{ photoThumbStyle }}"></div>
+                  <button onClick="{{ onRemovePhoto }}" style="border:2px solid var(--color-text);background:var(--color-bg);color:var(--color-text);font-family:var(--font-heading);font-weight:800;font-size:12px;letter-spacing:0.06em;text-transform:uppercase;padding:9px 13px;cursor:pointer;">Remove</button>
+                </div>
+              </sc-if>
+              <sc-if value="{{ noPhotoYet }}" hint-placeholder-val="{{ true }}">
+                <label style="display:flex;align-items:flex-start;gap:10px;margin-bottom:10px;cursor:pointer;">
+                  <input type="checkbox" checked="{{ photoConsent }}" onChange="{{ onPhotoConsent }}" style="margin-top:3px;"/>
+                  <span style="font-size:13px;line-height:1.5;color:var(--color-neutral-700);max-width:46ch;">I have the right to use this photo and consent to it being used once to illustrate this book. It is not stored.</span>
+                </label>
+                <input type="file" accept="image/*" onChange="{{ onPhotoPick }}" disabled="{{ photoPickDisabled }}" style="font-size:13px;"/>
+              </sc-if>
+            </div>
+          </sc-if>
           <div style="margin-top:26px;padding-top:22px;border-top:2px solid var(--color-divider);">
             <div style="font-size:11px;letter-spacing:0.16em;text-transform:uppercase;color:var(--color-neutral-600);margin-bottom:12px;">{{ tagsLabel }}</div>
             <div style="display:flex;flex-wrap:wrap;gap:10px;">
@@ -311,7 +329,7 @@ const DIRECTIONS = {
 class Component extends DCLogic {
   state = {
     audience: 'child', step: 1, direction: 0, titleIdx: 0, tags: [],
-    dedication: '',
+    dedication: '', photo: null, photoConsent: false,
     data: { child: {}, couple: {}, family: {} },
   };
 
@@ -341,6 +359,7 @@ class Component extends DCLogic {
         audience: this.state.audience, direction: this.state.direction,
         title: this.titleOptions()[Math.min(this.state.titleIdx, 2)],
         names: this.names(), tags: this.state.tags, dedication: this.state.dedication,
+        photo: this.state.photo, photoConsent: this.state.photoConsent,
         data: this.state.data[this.state.audience] || {},
       }));
     } catch (e) {}
@@ -448,6 +467,22 @@ class Component extends DCLogic {
     const a = this.state.audience;
     const data = { ...this.state.data, [a]: { ...this.state.data[a], [key]: val } };
     this.setState({ data });
+  }
+
+  async downscalePhoto(file) {
+    const url = URL.createObjectURL(file);
+    try {
+      const img = await new Promise((ok, err) => {
+        const i = new Image();
+        i.onload = () => ok(i); i.onerror = err; i.src = url;
+      });
+      const scale = Math.min(1, 1024 / Math.max(img.width, img.height));
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.round(img.width * scale);
+      canvas.height = Math.round(img.height * scale);
+      canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+      return canvas.toDataURL('image/jpeg', 0.85); // canvas re-encode drops EXIF
+    } finally { URL.revokeObjectURL(url); }
   }
 
   vals() { return this.state.data[this.state.audience] || {}; }
@@ -568,6 +603,25 @@ class Component extends DCLogic {
         wrapStyle: { display: 'block', gridColumn: f.long ? '1 / -1' : 'auto' },
         onInput: (e) => this.field(f.k, e.target.value),
       })),
+
+      showPhotoUpload: a !== 'family',
+      hasPhoto: !!this.state.photo,
+      noPhotoYet: !this.state.photo,
+      photoConsent: this.state.photoConsent,
+      photoPickDisabled: !this.state.photoConsent,
+      photoThumbStyle: {
+        width: '72px', height: '72px', backgroundSize: 'cover', backgroundPosition: 'center',
+        border: '2px solid var(--color-text)',
+        backgroundImage: this.state.photo ? 'url(' + this.state.photo + ')' : 'none',
+      },
+      onPhotoConsent: (e) => this.setState({ photoConsent: e.target.checked }),
+      onPhotoPick: async (e) => {
+        const f = e.target.files && e.target.files[0];
+        if (!f) return;
+        const photo = await this.downscalePhoto(f);
+        this.setState({ photo });
+      },
+      onRemovePhoto: () => this.setState({ photo: null }),
 
       tagsLabel: { child: 'Things to weave in', couple: 'Things to weave in', family: 'Things to weave in' }[a],
       tags: TAGS[a].map((label) => {
