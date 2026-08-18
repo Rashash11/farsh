@@ -61,6 +61,35 @@ app.post('/api/generate-book', async (req, res) => {
   }
 });
 
+const { generateCoverArt, generatePlates, redrawPlate } = require('./lib/generateArt');
+
+// Photos ride along as base64 — allow a bigger body on art routes only.
+const artJson = express.json({ limit: '8mb' });
+
+function artRoute(handler) {
+  return async (req, res) => {
+    const limited = checkRateLimit(req.ip || 'unknown', 'art');
+    if (limited) {
+      res.set('Retry-After', String(limited.retryAfterSeconds));
+      return res.status(limited.status).json({ error: limited.error, message: limited.message });
+    }
+    const book = req.body && typeof req.body === 'object' ? req.body.book || req.body : {};
+    if (!book.audience) {
+      return res.status(400).json({ error: 'missing_audience', message: 'Request body must include "book.audience".' });
+    }
+    try {
+      res.json(await handler(book, req.body));
+    } catch (err) {
+      console.error('[art] failed:', err.message);
+      res.status(502).json({ error: 'art_failed', message: 'Could not paint right now.' });
+    }
+  };
+}
+
+app.post('/api/generate-cover', artJson, artRoute((book) => generateCoverArt(book)));
+app.post('/api/generate-plates', artJson, artRoute((book) => generatePlates(book)));
+app.post('/api/redraw-page', artJson, artRoute((book, body) => redrawPlate(book, body.pageIndex)));
+
 // Static files last, so /api/* above always wins over any same-named file.
 app.use(express.static(path.join(__dirname), { extensions: ['html'] }));
 
