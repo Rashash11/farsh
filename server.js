@@ -14,6 +14,7 @@ require('dotenv').config();
 const path = require('path');
 const express = require('express');
 const { generateBookPages } = require('./lib/generateBook');
+const { generateCoverArt, generatePlates, redrawPlate } = require('./lib/generateArt');
 const { checkRateLimit } = require('./lib/rateLimit');
 
 const app = express();
@@ -23,9 +24,51 @@ const PORT = process.env.PORT || 4000;
 // so rate limits apply per visitor rather than per proxy.
 app.set('trust proxy', 1);
 
-app.use(express.json({ limit: '256kb' }));
-
 app.get('/', (req, res) => res.redirect('/Landing Page.dc.html'));
+
+// Photos ride along as base64 — allow a bigger body on art routes only.
+//
+// ORDERING REQUIREMENT — do not move this below the app-wide
+// express.json({ limit: '256kb' }) further down, and do not merge the two
+// parsers. Express walks middleware/routes in registration order; these
+// three routes (and their own 8mb `artJson` parser) are registered BEFORE
+// the app-wide 256kb parser specifically so that parser never runs for
+// them — each art route sends its response and the request never reaches
+// it. If the 256kb parser ran first instead (as it briefly did), it would
+// reject every real photo upload (~100-400KB base64) with an ungraceful
+// 413 before the art route's own 8mb limit, rate check, or audience check
+// ever got a chance to run. /api/generate-book (no photos, small JSON
+// payloads) is what the smaller app-wide limit below is meant to protect.
+const artJson = express.json({ limit: '8mb' });
+
+function artRoute(handler) {
+  return async (req, res) => {
+    const limited = checkRateLimit(req.ip || 'unknown', 'art');
+    if (limited) {
+      res.set('Retry-After', String(limited.retryAfterSeconds));
+      return res.status(limited.status).json({ error: limited.error, message: limited.message });
+    }
+    const book = req.body && typeof req.body === 'object' ? req.body.book || req.body : {};
+    if (!book.audience) {
+      return res.status(400).json({ error: 'missing_audience', message: 'Request body must include "book.audience".' });
+    }
+    try {
+      res.json(await handler(book, req.body));
+    } catch (err) {
+      console.error('[art] failed:', err.message);
+      res.status(502).json({ error: 'art_failed', message: 'Could not paint right now.' });
+    }
+  };
+}
+
+app.post('/api/generate-cover', artJson, artRoute((book) => generateCoverArt(book)));
+app.post('/api/generate-plates', artJson, artRoute((book) => generatePlates(book)));
+app.post('/api/redraw-page', artJson, artRoute((book, body) => redrawPlate(book, body.pageIndex)));
+
+// Everything else — in particular /api/generate-book, which never carries
+// photos — gets the smaller, app-wide body limit. Registered AFTER the art
+// routes above so it never runs for their requests (see ordering comment).
+app.use(express.json({ limit: '256kb' }));
 
 app.post('/api/generate-book', async (req, res) => {
   const limited = checkRateLimit(req.ip || 'unknown');
@@ -60,35 +103,6 @@ app.post('/api/generate-book', async (req, res) => {
     });
   }
 });
-
-const { generateCoverArt, generatePlates, redrawPlate } = require('./lib/generateArt');
-
-// Photos ride along as base64 — allow a bigger body on art routes only.
-const artJson = express.json({ limit: '8mb' });
-
-function artRoute(handler) {
-  return async (req, res) => {
-    const limited = checkRateLimit(req.ip || 'unknown', 'art');
-    if (limited) {
-      res.set('Retry-After', String(limited.retryAfterSeconds));
-      return res.status(limited.status).json({ error: limited.error, message: limited.message });
-    }
-    const book = req.body && typeof req.body === 'object' ? req.body.book || req.body : {};
-    if (!book.audience) {
-      return res.status(400).json({ error: 'missing_audience', message: 'Request body must include "book.audience".' });
-    }
-    try {
-      res.json(await handler(book, req.body));
-    } catch (err) {
-      console.error('[art] failed:', err.message);
-      res.status(502).json({ error: 'art_failed', message: 'Could not paint right now.' });
-    }
-  };
-}
-
-app.post('/api/generate-cover', artJson, artRoute((book) => generateCoverArt(book)));
-app.post('/api/generate-plates', artJson, artRoute((book) => generatePlates(book)));
-app.post('/api/redraw-page', artJson, artRoute((book, body) => redrawPlate(book, body.pageIndex)));
 
 // Static files last, so /api/* above always wins over any same-named file.
 app.use(express.static(path.join(__dirname), { extensions: ['html'] }));
