@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script src="./support.js"></script>
+<script src="./page-transitions.js"></script>
 </head>
 <body>
 <x-dc>
@@ -77,12 +78,12 @@
     .xb-pg-text { background: var(--paper); box-shadow: inset 18px 0 30px -20px rgba(32,30,29,0.45); box-sizing: border-box; padding: clamp(18px,3vw,44px); display: flex; flex-direction: column; justify-content: space-between; }
     .xb-blur-light .xb-pg { filter: url(#xb-blur-light); }
     .xb-blur-heavy .xb-pg { filter: url(#xb-blur-heavy); }
-    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; } }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; } }
   </style>
 </helmet>
 
 <div style="{{ shellStyle }}">
-<div style="max-width:1440px;margin:0 auto;border-left:2px solid var(--color-divider);border-right:2px solid var(--color-divider);min-height:100vh;">
+<div class="page-sheet" style="max-width:1440px;margin:0 auto;border-left:2px solid var(--color-divider);border-right:2px solid var(--color-divider);min-height:100vh;">
 
   <nav style="display:flex;align-items:center;justify-content:space-between;gap:20px;padding:16px clamp(16px,3vw,40px);border-bottom:2px solid var(--color-divider);">
     <div style="display:flex;align-items:baseline;gap:14px;">

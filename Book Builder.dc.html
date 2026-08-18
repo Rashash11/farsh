@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script src="./support.js"></script>
+<script src="./page-transitions.js"></script>
 </head>
 <body>
 <x-dc>
@@ -60,12 +61,12 @@
     @keyframes beat { 0%, 100% { transform: scale(1); } 14% { transform: scale(1.16); } 28% { transform: scale(1); } 42% { transform: scale(1.1); } }
     @keyframes driftY { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-7px); } }
     @keyframes stampIn { from { opacity: 0; transform: rotate(-14deg) scale(1.3); } to { opacity: 1; transform: rotate(-6deg) scale(1); } }
-    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; } }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; } }
   </style>
 </helmet>
 
 <div style="{{ shellStyle }}">
-<div style="max-width:1440px;margin:0 auto;border-left:2px solid var(--color-divider);border-right:2px solid var(--color-divider);min-height:100vh;">
+<div class="page-sheet" style="max-width:1440px;margin:0 auto;border-left:2px solid var(--color-divider);border-right:2px solid var(--color-divider);min-height:100vh;">
 
   <nav style="display:flex;align-items:center;justify-content:space-between;gap:20px;padding:16px clamp(16px,3vw,40px);border-bottom:2px solid var(--color-divider);">
     <div style="display:flex;align-items:baseline;gap:14px;">

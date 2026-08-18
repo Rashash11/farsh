@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script src="./support.js"></script>
+<script src="./page-transitions.js"></script>
 </head>
 <body>
 <x-dc>
@@ -63,11 +64,11 @@
     @keyframes turnPage { from { opacity: 0.2; transform: perspective(1400px) rotateY(-22deg); } to { opacity: 1; transform: none; } }
     @keyframes nudge { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(4px); } }
     @keyframes floatBook { 0%, 100% { transform: rotate(-2.5deg) translateY(0); } 50% { transform: rotate(-1.8deg) translateY(-12px); } }
-    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; } }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; } }
   </style>
 </helmet>
 
-<div style="max-width:1440px;margin:0 auto;border-left:2px solid var(--color-divider);border-right:2px solid var(--color-divider);min-height:100vh;overflow-x:clip;">
+<div class="page-sheet" style="max-width:1440px;margin:0 auto;border-left:2px solid var(--color-divider);border-right:2px solid var(--color-divider);min-height:100vh;overflow-x:clip;">
 
   <nav style="position:sticky;top:0;z-index:50;display:flex;align-items:center;justify-content:space-between;gap:20px;padding:16px clamp(16px,3vw,40px);background:color-mix(in srgb, var(--color-bg) 92%, transparent);backdrop-filter:blur(8px);border-bottom:2px solid var(--color-divider);">
     <div style="display:flex;align-items:baseline;gap:12px;">
