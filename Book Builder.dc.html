@@ -359,7 +359,8 @@ class Component extends DCLogic {
         audience: this.state.audience, direction: this.state.direction,
         title: this.titleOptions()[Math.min(this.state.titleIdx, 2)],
         names: this.names(), tags: this.state.tags, dedication: this.state.dedication,
-        photo: this.state.photo, photoConsent: this.state.photoConsent,
+        photo: this.state.audience === 'family' ? null : this.state.photo,
+        photoConsent: this.state.audience === 'family' ? false : this.state.photoConsent,
         data: this.state.data[this.state.audience] || {},
       }));
     } catch (e) {}
