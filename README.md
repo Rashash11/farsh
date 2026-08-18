@@ -49,20 +49,27 @@ deploys also need `BLOB_READ_WRITE_TOKEN` (locally: `uploads/generated/`).
 ## Project layout
 
 ```
-server.js              Express server: static files + POST /api/generate-book
+server.js              Express server: static files + the story/art API routes + rate limiting
 lib/generateBook.js     Builds the prompt, calls Claude, returns 6 page texts
+lib/generateArt.js      Gemini image pipeline: character sheet -> cover -> plates
+lib/artPrompts.js       Pure, snapshot-testable prompt builders for the illustrations
+lib/rateLimit.js        Per-IP + global rate limiting for the generation endpoints
+lib/stripExif.js        Strips EXIF metadata from an uploaded photo before it's sent to Gemini
+api/                    Vercel serverless functions — one per route, mirroring server.js
+test/                   node --test unit tests for everything in lib/
 Landing Page.dc.html    )
 Book Builder.dc.html    ) the site itself — unchanged except Book Preview.dc.html,
 Book Preview.dc.html    ) which now calls /api/generate-book on load
 Checkout.dc.html        )
 support.js              dc-runtime — the templating engine these pages use
 _ds/                    Design system (Modernist) — fonts, colors, base styles
-uploads/                Sample cover & page photography
+uploads/                Sample cover & page photography, plus generated art when saved locally
 docs/                   Design notes for this generation work
 ```
 
 See `docs/2026-08-16-ai-book-generation-design.md` for the reasoning behind
-what's wired up vs. deliberately left alone (payments, images, deployment).
+what's wired up vs. simulated (payments) and what deploying the image
+pipeline needs (`GEMINI_API_KEY`, `BLOB_READ_WRITE_TOKEN` on Vercel).
 
 ## Troubleshooting
 
