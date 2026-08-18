@@ -180,6 +180,12 @@
             <sc-if value="{{ painting }}" hint-placeholder-val="{{ false }}">
               <p style="font-size:14px;margin:14px 0 0;opacity:0.85;">Your illustrations are being painted — {{ paintingJoke }}</p>
             </sc-if>
+            <sc-if value="{{ plateLimited }}" hint-placeholder-val="{{ false }}">
+              <p style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;font-size:14px;line-height:1.6;margin:14px 0 0;opacity:0.92;">
+                <span>The painter is busy — your illustrations will be ready soon.</span>
+                <button onClick="{{ onRetryPlates }}" style="border:2px solid currentColor;background:transparent;color:inherit;font-family:var(--font-heading);font-weight:800;font-size:11px;letter-spacing:0.08em;text-transform:uppercase;padding:8px 12px;cursor:pointer;">Try again</button>
+              </p>
+            </sc-if>
             <p style="font-size:14px;letter-spacing:0.02em;margin:0;opacity:0.85;">"{{ bookTitle }}" · {{ names }}</p>
           </div>
           <div style="display:flex;align-items:flex-start;gap:22px;flex-shrink:0;">
@@ -290,7 +296,7 @@ const JOKES = [
 class Component extends DCLogic {
   state = {
     audience: 'child', format: 1, speed: 'Standard · 5 days', gift: false,
-    placed: false, order: '', book: null, ship: {}, painting: false, jokeIdx: 0,
+    placed: false, order: '', book: null, ship: {}, painting: false, jokeIdx: 0, plateLimited: false,
   };
 
   componentDidMount() {
@@ -392,21 +398,30 @@ class Component extends DCLogic {
   async paintPlates() {
     const book = this.state.book;
     if (!book || !book.characterSheetUrl || (Array.isArray(book.plateUrls) && book.plateUrls.some(Boolean))) return;
-    this.setState({ painting: true, jokeIdx: 0 });
+    this.setState({ painting: true, jokeIdx: 0, plateLimited: false });
     if (!this.reduced()) {
       this.jokeTimer = setInterval(() => this.setState({ jokeIdx: this.state.jokeIdx + 1 }), 1400);
     }
     try {
       const res = await fetch('/api/generate-plates', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ book }),
+        body: JSON.stringify({ book: { ...book, photo: undefined, photoConsent: undefined } }),
       });
+      if (res.status === 429) {
+        this.setState({ painting: false, plateLimited: true });
+        return;
+      }
       const json = await res.json().catch(() => ({}));
       const plateUrls = Array.isArray(json.plateUrls) ? json.plateUrls : [];
-      const updated = { ...book, plateUrls };
+      // Merge over the LATEST this.state.book at write time (not the local
+      // `book` captured before the await), so this can't clobber fields a
+      // concurrent writer set while this request was in flight.
+      const updated = { ...this.state.book, plateUrls };
       try { localStorage.setItem('farsh.book', JSON.stringify(updated)); } catch (e) {}
       this.setState({ book: updated, painting: false });
     } catch (e) {
+      // Silent degradation for anything other than the 429 case above —
+      // the confirmation page still works, just without generated plates.
       this.setState({ painting: false });
     } finally {
       if (this.jokeTimer) { clearInterval(this.jokeTimer); this.jokeTimer = null; }
@@ -524,7 +539,7 @@ class Component extends DCLogic {
         border: '2px solid ' + t.coverEdge,
         transform: 'rotate(' + t.tilt + ')', boxShadow: 'var(--shadow-md)',
         ...(this.state.book && this.state.book.coverUrl ? {
-          backgroundImage: 'url(' + this.state.book.coverUrl + ')',
+          backgroundImage: 'url("' + encodeURI(this.state.book.coverUrl) + '")',
           backgroundSize: 'cover', backgroundPosition: 'center',
         } : {}),
       },
@@ -548,6 +563,8 @@ class Component extends DCLogic {
       orderNo: this.state.order || 'FA-0000',
       painting: !!this.state.painting,
       paintingJoke: JOKES[this.state.jokeIdx % JOKES.length],
+      plateLimited: !!this.state.plateLimited,
+      onRetryPlates: () => this.paintPlates(),
       doneStyle: {
         background: t.doneBg, color: a === 'family' ? '#f2f7e6' : '#fff2eb',
         padding: 'clamp(36px,4.6vw,80px) clamp(20px,3vw,44px)',

@@ -230,6 +230,18 @@ const JOKES = [
 class Component extends DCLogic {
   state = { audience: 'child', page: 0, editing: false, draft: '', edits: {}, book: null, generating: false, genError: null, jokeIdx: 0, paintingCover: false, redrawing: false };
 
+  // Single writer for `book`: always merges over the LATEST this.state.book
+  // at write time (not a stale local var captured before an await), so two
+  // in-flight writers (e.g. generate() and generateArt()) that both started
+  // from the same mount-time book can't clobber each other's fields —
+  // whichever finishes last still keeps the other's already-written fields.
+  patchBook(fields) {
+    const merged = { ...this.state.book, ...fields };
+    try { localStorage.setItem('farsh.book', JSON.stringify(merged)); } catch (e) {}
+    this.setState({ book: merged });
+    return merged;
+  }
+
   componentDidMount() {
     let book = null;
     try { book = JSON.parse(localStorage.getItem('farsh.book') || 'null'); } catch (e) {}
@@ -375,18 +387,22 @@ class Component extends DCLogic {
       this.jokeTimer = setInterval(() => this.setState({ jokeIdx: this.state.jokeIdx + 1 }), 1400);
     }
     try {
+      // The book can carry a ~100-400KB (or larger) photo data URL plus
+      // generated-art fields — none of which the writer needs, and posting
+      // them here would blow past this route's small app-wide body limit
+      // (413) and silently fall back to the sample story. Strip them.
+      const { photo, photoConsent, characterSheetUrl, coverUrl, plateUrls, ...textBook } = book;
       const res = await fetch('/api/generate-book', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(book),
+        body: JSON.stringify(textBook),
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok || !Array.isArray(json.pages)) {
         throw new Error((json && json.message) || 'Could not write the book right now.');
       }
-      const updated = { ...book, pages: json.pages, scenes: Array.isArray(json.scenes) ? json.scenes : [], pagesFor: fp };
-      try { localStorage.setItem('farsh.book', JSON.stringify(updated)); } catch (e) {}
-      this.setState({ book: updated, generating: false, genError: null });
+      this.patchBook({ pages: json.pages, scenes: Array.isArray(json.scenes) ? json.scenes : [], pagesFor: fp });
+      this.setState({ generating: false, genError: null });
     } catch (e) {
       this.setState({ generating: false, genError: (e && e.message) || 'Could not write the book right now.' });
     } finally {
@@ -409,7 +425,18 @@ class Component extends DCLogic {
 
   maybeGenerateArt(book) {
     const fp = this.artFingerprint(book);
-    if (book.coverUrl && book.artFor === fp) return;
+    if (book.artFor === fp) {
+      // Already tried for these exact inputs. If it failed last time
+      // (coverUrl still null), allow exactly one retry per page load —
+      // cheap on repeat reloads, but a user can still get a second try by
+      // reloading once. this.artTriedThisSession is intentionally NOT
+      // persisted, so it resets every fresh page load.
+      if (!book.coverUrl && !this.artTriedThisSession) {
+        this.artTriedThisSession = true;
+        this.generateArt(book, fp);
+      }
+      return;
+    }
     this.generateArt(book, fp);
   }
 
@@ -422,15 +449,20 @@ class Component extends DCLogic {
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(json.message || 'paint failed');
-      const updated = {
-        ...this.state.book,
+      // A response that completed — even one whose art generation failed
+      // server-side (coverUrl null) — must still mark artFor so a repeat
+      // page load doesn't silently re-bill the art API every time.
+      const fields = {
         characterSheetUrl: json.characterSheetUrl || null,
         coverUrl: json.coverUrl || null,
         artFor: fp,
         artNote: json.fellBackToDescription ? 'We illustrated from your description instead of the photo.' : '',
       };
-      try { localStorage.setItem('farsh.book', JSON.stringify(updated)); } catch (e) {}
-      this.setState({ book: updated, paintingCover: false });
+      // A character sheet now exists — the photo is no longer needed and
+      // should stop being kept around / re-sent on every later art call.
+      if (json.characterSheetUrl) fields.photo = null;
+      this.patchBook(fields);
+      this.setState({ paintingCover: false });
     } catch (e) {
       this.setState({ paintingCover: false }); // silent: typeset cover remains
     }
@@ -471,11 +503,6 @@ class Component extends DCLogic {
     return (sets[a] || sets.child).map((s, i) => ({
       ...s,
       img: gen[i] || PLATES[i % PLATES.length],
-      imgStyle: {
-        width: '100%', height: '100%',
-        backgroundImage: 'url("' + (gen[i] || PLATES[i % PLATES.length]) + '")',
-        backgroundSize: 'cover', backgroundPosition: 'center',
-      },
       alt: 'Illustrated page ' + (i + 1),
       plate: 'Plate ' + String(i + 1).padStart(2, '0'),
       // Manual edits always win. Otherwise prefer the AI-written page for
@@ -492,14 +519,13 @@ class Component extends DCLogic {
     try {
       const res = await fetch('/api/redraw-page', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ book, pageIndex: i }),
+        body: JSON.stringify({ book: { ...book, photo: undefined, photoConsent: undefined }, pageIndex: i }),
       });
       const json = await res.json().catch(() => ({}));
       if (json.plateUrl) {
         const plateUrls = [...(book.plateUrls || [])]; plateUrls[i] = json.plateUrl;
-        const updated = { ...book, plateUrls };
-        try { localStorage.setItem('farsh.book', JSON.stringify(updated)); } catch (e) {}
-        this.setState({ book: updated, redrawing: false });
+        this.patchBook({ plateUrls });
+        this.setState({ redrawing: false });
         this.paintBook();
         return;
       }
@@ -520,7 +546,7 @@ class Component extends DCLogic {
     const list = this.spreads();
     const s = list[(i % list.length + list.length) % list.length];
     if (side === 'left') {
-      return '<div class="xb-pg xb-pg-art" style="background-image:url(\'' + s.img + '\')">' +
+      return '<div class="xb-pg xb-pg-art" style="background-image:url(\'' + encodeURI(s.img) + '\')">' +
         '<div style="position:absolute;left:0;bottom:0;background:var(--color-text);color:var(--color-bg);font-size:10px;letter-spacing:0.16em;text-transform:uppercase;padding:7px 11px;">' + this.esc(s.plate) + '</div>' +
       '</div>';
     }
@@ -677,7 +703,7 @@ class Component extends DCLogic {
       coverArtStyle: {
         width: 'clamp(90px,10vw,140px)', aspectRatio: '3/4', backgroundSize: 'cover', backgroundPosition: 'center',
         border: '2px solid var(--color-accent-900)', boxShadow: 'var(--shadow-md)', transform: 'rotate(-2deg)', flexShrink: 0,
-        backgroundImage: this.state.book && this.state.book.coverUrl ? 'url(' + this.state.book.coverUrl + ')' : 'none',
+        backgroundImage: (this.state.book && this.state.book.coverUrl) ? 'url("' + encodeURI(this.state.book.coverUrl) + '")' : 'none',
       },
       paintingCover: !!this.state.paintingCover,
       artNoteView: !!(this.state.book && this.state.book.artNote),
