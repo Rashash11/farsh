@@ -106,6 +106,15 @@
         <h1 style="font-family:var(--font-heading);font-weight:800;font-size:clamp(30px,4.4vw,60px);line-height:0.94;letter-spacing:-0.042em;margin:0 0 12px;max-width:24ch;">{{ bookTitle }}</h1>
         <div style="font-size:13px;letter-spacing:0.1em;text-transform:uppercase;color:var(--color-neutral-600);">{{ subline }}</div>
       </div>
+      <sc-if value="{{ hasCoverArt }}" hint-placeholder-val="{{ false }}">
+        <div data-cover-art style="{{ coverArtStyle }}"></div>
+      </sc-if>
+      <sc-if value="{{ paintingCover }}" hint-placeholder-val="{{ false }}">
+        <span style="font-size:12px;letter-spacing:0.1em;text-transform:uppercase;color:var(--color-accent-700);">Painting the cover…</span>
+      </sc-if>
+      <sc-if value="{{ artNoteView }}" hint-placeholder-val="{{ false }}">
+        <span style="font-size:12px;color:var(--color-neutral-600);">{{ artNote }}</span>
+      </sc-if>
       <div data-sticker data-rot="-6" style="background:var(--color-cta);color:var(--color-bg);font-family:var(--font-heading);font-weight:800;font-size:12px;letter-spacing:0.12em;text-transform:uppercase;padding:11px 15px;box-shadow:var(--shadow-md);transform:rotate(-6deg);animation:stampIn .5s cubic-bezier(.16,1,.3,1) both;">Proof · not printed yet</div>
     </div>
   </section>
@@ -126,6 +135,7 @@
       <div data-book-caption style="font-size:12px;letter-spacing:0.14em;text-transform:uppercase;color:rgba(240,230,211,0.8);"></div>
       <button onClick="{{ onEdit }}" style="{{ editBtnStyle }}">{{ editLabel }}</button>
     </div>
+    <div style="font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:rgba(240,230,211,0.6);text-align:center;margin-top:8px;">Final illustrations are painted after you approve</div>
 
     <sc-if value="{{ editing }}" hint-placeholder-val="{{ false }}">
       <div style="margin-top:14px;">
@@ -213,7 +223,7 @@ const JOKES = [
 ];
 
 class Component extends DCLogic {
-  state = { audience: 'child', page: 0, editing: false, draft: '', edits: {}, book: null, generating: false, genError: null, jokeIdx: 0 };
+  state = { audience: 'child', page: 0, editing: false, draft: '', edits: {}, book: null, generating: false, genError: null, jokeIdx: 0, paintingCover: false };
 
   componentDidMount() {
     let book = null;
@@ -224,6 +234,7 @@ class Component extends DCLogic {
     this.bindAll();
     this.setupCursor();
     if (book) this.maybeGenerate(book);
+    if (book) this.maybeGenerateArt(book);
     // Page-flip book (adapted from Hank-D-Tank/x-book)
     if (window.gsap && window.CustomEase && !this.easeReady) {
       gsap.registerPlugin(CustomEase);
@@ -375,6 +386,48 @@ class Component extends DCLogic {
       this.setState({ generating: false, genError: (e && e.message) || 'Could not write the book right now.' });
     } finally {
       if (this.jokeTimer) { clearInterval(this.jokeTimer); this.jokeTimer = null; }
+    }
+  }
+
+  // Keep in sync by hand with lib/artPrompts.js's server-side artFingerprint
+  // (same JSON shape, same djb2 hash) so the client can tell whether a
+  // previously-painted cover still matches the current book inputs.
+  artFingerprint(book) {
+    const d = (book && book.data) || {};
+    const h = (s) => { let x = 5381; for (let i = 0; i < s.length; i++) x = ((x << 5) + x + s.charCodeAt(i)) >>> 0; return x.toString(36); };
+    return JSON.stringify({
+      audience: book.audience, direction: book.direction || 0,
+      looks: d.looks || '', age: d.age || '', members: d.members || '',
+      photo: book.photo ? h(book.photo) : '',
+    });
+  }
+
+  maybeGenerateArt(book) {
+    const fp = this.artFingerprint(book);
+    if (book.coverUrl && book.artFor === fp) return;
+    this.generateArt(book, fp);
+  }
+
+  async generateArt(book, fp) {
+    this.setState({ paintingCover: true });
+    try {
+      const res = await fetch('/api/generate-cover', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ book }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json.message || 'paint failed');
+      const updated = {
+        ...this.state.book,
+        characterSheetUrl: json.characterSheetUrl || null,
+        coverUrl: json.coverUrl || null,
+        artFor: fp,
+        artNote: json.fellBackToDescription ? 'We illustrated from your description instead of the photo.' : '',
+      };
+      try { localStorage.setItem('farsh.book', JSON.stringify(updated)); } catch (e) {}
+      this.setState({ book: updated, paintingCover: false });
+    } catch (e) {
+      this.setState({ paintingCover: false }); // silent: typeset cover remains
     }
   }
 
@@ -591,6 +644,16 @@ class Component extends DCLogic {
       },
       bookTitle: title,
       subline: this.names() + ' · ' + dirLabel + ' · ' + t.pages,
+
+      hasCoverArt: !!(this.state.book && this.state.book.coverUrl),
+      coverArtStyle: {
+        width: 'clamp(90px,10vw,140px)', aspectRatio: '3/4', backgroundSize: 'cover', backgroundPosition: 'center',
+        border: '2px solid var(--color-accent-900)', boxShadow: 'var(--shadow-md)', transform: 'rotate(-2deg)', flexShrink: 0,
+        backgroundImage: this.state.book && this.state.book.coverUrl ? 'url(' + this.state.book.coverUrl + ')' : 'none',
+      },
+      paintingCover: !!this.state.paintingCover,
+      artNoteView: !!(this.state.book && this.state.book.artNote),
+      artNote: (this.state.book && this.state.book.artNote) || '',
 
       onPrev: () => this.turnSpread('prev'),
       onNext: () => this.turnSpread('next'),
