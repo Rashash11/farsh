@@ -114,10 +114,13 @@
             <label style="{{ f.wrapStyle }}">
               <span style="display:block;font-size:11px;letter-spacing:0.16em;text-transform:uppercase;color:var(--color-neutral-600);margin-bottom:8px;">{{ f.label }}</span>
               <sc-if value="{{ f.isLong }}" hint-placeholder-val="{{ false }}">
-                <textarea value="{{ f.value }}" onChange="{{ f.onInput }}" placeholder="{{ f.placeholder }}" rows="3" style="width:100%;box-sizing:border-box;padding:13px 14px;border:2px solid var(--color-text);background:var(--color-bg);font-size:15px;line-height:1.5;color:var(--color-text);resize:vertical;"></textarea>
+                <textarea data-ship="{{ f.key }}" value="{{ f.value }}" onChange="{{ f.onInput }}" placeholder="{{ f.placeholder }}" rows="3" required="{{ f.required }}" aria-invalid="{{ f.ariaInvalid }}" aria-describedby="{{ f.describedBy }}" style="{{ f.textareaStyle }}"></textarea>
               </sc-if>
               <sc-if value="{{ f.isShort }}" hint-placeholder-val="{{ true }}">
-                <input value="{{ f.value }}" onChange="{{ f.onInput }}" placeholder="{{ f.placeholder }}" style="width:100%;box-sizing:border-box;padding:13px 14px;border:2px solid var(--color-text);background:var(--color-bg);font-size:15px;color:var(--color-text);"/>
+                <input data-ship="{{ f.key }}" value="{{ f.value }}" onChange="{{ f.onInput }}" placeholder="{{ f.placeholder }}" required="{{ f.required }}" aria-invalid="{{ f.ariaInvalid }}" aria-describedby="{{ f.describedBy }}" style="{{ f.inputStyle }}"/>
+              </sc-if>
+              <sc-if value="{{ f.hasError }}" hint-placeholder-val="{{ false }}">
+                <span id="{{ f.errorId }}" style="{{ f.errorStyle }}">{{ f.error }}</span>
               </sc-if>
             </label>
           </sc-for>
@@ -168,6 +171,9 @@
               <a href="./Book Builder.dc.html" style="text-decoration:underline;font-weight:700;">Start your book</a>
               and you will come back here at the end.
             </div>
+          </sc-if>
+          <sc-if value="{{ shipSummary }}">
+            <div role="alert" style="margin-bottom:14px;font-size:13px;line-height:1.6;color:var(--color-accent-700);font-weight:700;">{{ shipSummary }}</div>
           </sc-if>
           <button onClick="{{ onPlace }}" disabled="{{ noBook }}" style="{{ placeStyle }}" style-hover="{{ placeHover }}">Place the order</button>
           <div style="font-size:12px;line-height:1.6;color:var(--color-neutral-700);">{{ reassurance }}</div>
@@ -303,7 +309,7 @@ const JOKES = [
 class Component extends DCLogic {
   state = {
     audience: 'child', format: 1, speed: 'Standard · 5 days', gift: false,
-    placed: false, order: '', book: null, ship: {}, painting: false, jokeIdx: 0, plateLimited: false,
+    placed: false, order: '', book: null, ship: {}, errors: {}, painting: false, jokeIdx: 0, plateLimited: false,
   };
 
   componentDidMount() {
@@ -398,7 +404,35 @@ class Component extends DCLogic {
     window.addEventListener('mousemove', this.onMove, { passive: true });
   }
 
-  ship(key, val) { this.setState({ ship: { ...this.state.ship, [key]: val } }); }
+  ship(key, val) {
+    const ship = { ...this.state.ship, [key]: val };
+    // Clear a field's error as soon as it becomes valid, so the form stops
+    // nagging while it is being fixed rather than only on the next submit.
+    const errors = { ...this.state.errors };
+    if (errors[key] && !this.fieldError(key, val)) delete errors[key];
+    this.setState({ ship, errors });
+  }
+
+  /** @returns {string} message for an invalid field, or '' when it is fine. */
+  fieldError(key, raw) {
+    const v = (raw || '').trim();
+    if (key === 'who') return v ? '' : 'We need a name to address the parcel to.';
+    if (key === 'email') {
+      if (!v) return 'The proof photograph goes to this address.';
+      return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v) ? '' : 'That email does not look right.';
+    }
+    if (key === 'address') return v ? '' : 'We cannot post the book without an address.';
+    return '';
+  }
+
+  validateShip() {
+    const errors = {};
+    for (const k of ['who', 'email', 'address']) {
+      const msg = this.fieldError(k, this.state.ship[k]);
+      if (msg) errors[k] = msg;
+    }
+    return errors;
+  }
 
   money(n) { return '$' + n; }
 
@@ -458,11 +492,14 @@ class Component extends DCLogic {
       transition: 'background .2s ease, color .2s ease, border-color .2s ease',
     });
 
+    // The note is the only optional one: the book is physical and the proof
+    // photograph is emailed, so a name, an address and a working email are all
+    // needed before anything can actually be made or sent.
     const shipFields = [
-      { k: 'who', label: 'Who receives it', ph: 'Full name' },
-      { k: 'email', label: 'Email for the proof photograph', ph: 'you@email.com' },
-      { k: 'address', label: 'Address', ph: 'Street, city, postcode', long: true },
-      { k: 'note', label: a === 'child' ? 'Note on the card' : 'Note on the card (optional)', ph: 'Happy birthday, from all of us', long: true },
+      { k: 'who', label: 'Who receives it', ph: 'Full name', required: true },
+      { k: 'email', label: 'Email for the proof photograph', ph: 'you@email.com', required: true },
+      { k: 'address', label: 'Address', ph: 'Street, city, postcode', long: true, required: true },
+      { k: 'note', label: a === 'child' ? 'Note on the card (optional)' : 'Note on the card (optional)', ph: 'Happy birthday, from all of us', long: true },
     ];
 
     return {
@@ -499,12 +536,33 @@ class Component extends DCLogic {
         label, style: chip(label === this.state.speed), onPick: () => this.setState({ speed: label }),
       })),
 
-      fields: shipFields.map((f) => ({
-        label: f.label, placeholder: f.ph, value: this.state.ship[f.k] || '',
-        isLong: !!f.long, isShort: !f.long,
-        wrapStyle: { display: 'block', gridColumn: f.long ? '1 / -1' : 'auto' },
-        onInput: (e) => this.ship(f.k, e.target.value),
-      })),
+      fields: shipFields.map((f) => {
+        const err = this.state.errors[f.k] || '';
+        const box = {
+          width: '100%', boxSizing: 'border-box', padding: '13px 14px',
+          border: `2px solid ${err ? 'var(--color-accent-700)' : 'var(--color-text)'}`,
+          background: 'var(--color-bg)', fontSize: '15px', color: 'var(--color-text)',
+        };
+        return {
+          key: f.k, label: f.label, placeholder: f.ph, value: this.state.ship[f.k] || '',
+          isLong: !!f.long, isShort: !f.long,
+          required: !!f.required,
+          ariaInvalid: err ? 'true' : 'false',
+          error: err, hasError: !!err, errorId: `err-${f.k}`,
+          describedBy: err ? `err-${f.k}` : '',
+          wrapStyle: { display: 'block', gridColumn: f.long ? '1 / -1' : 'auto' },
+          inputStyle: box,
+          textareaStyle: { ...box, lineHeight: 1.5, resize: 'vertical' },
+          errorStyle: {
+            display: 'block', marginTop: '6px', fontSize: '12px', lineHeight: 1.5,
+            color: 'var(--color-accent-700)', fontWeight: 700,
+          },
+          onInput: (e) => this.ship(f.k, e.target.value),
+        };
+      }),
+      shipSummary: Object.keys(this.state.errors).length
+        ? `Check ${Object.keys(this.state.errors).length} field${Object.keys(this.state.errors).length > 1 ? 's' : ''} above before placing the order.`
+        : '',
 
       giftTitle: t.gift.title,
       giftBlurb: t.gift.blurb,
@@ -578,6 +636,15 @@ class Component extends DCLogic {
         // book to print, but the form still rendered and still issued an order
         // number. Never confirm an order for a book that does not exist.
         if (!this.state.book) return;
+        const errors = this.validateShip();
+        if (Object.keys(errors).length) {
+          this.setState({ errors });
+          // Put the cursor where the work is, rather than making them hunt.
+          const first = ['who', 'email', 'address'].find((k) => errors[k]);
+          const el = document.querySelector(`[data-ship="${first}"]`);
+          if (el) { el.focus(); el.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
+          return;
+        }
         const no = 'FA-' + String(Math.floor(1000 + Math.random() * 8999));
         this.setState({ placed: true, order: no });
         window.scrollTo({ top: 0, behavior: 'smooth' });
