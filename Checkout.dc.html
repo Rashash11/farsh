@@ -167,8 +167,8 @@
 
           <sc-if value="{{ noBook }}">
             <div role="status" style="border:2px solid var(--color-text);background:var(--color-bg);padding:16px 18px;margin-bottom:16px;font-size:13px;line-height:1.6;">
-              There is no book to order yet — it looks like this page was opened on its own.
-              <a href="./Book Builder.dc.html" style="text-decoration:underline;font-weight:700;">Start your book</a>
+              {{ noBookReason }}
+              <a href="{{ noBookHref }}" style="text-decoration:underline;font-weight:700;">{{ noBookCta }}</a>
               and you will come back here at the end.
             </div>
           </sc-if>
@@ -404,6 +404,21 @@ class Component extends DCLogic {
     window.addEventListener('mousemove', this.onMove, { passive: true });
   }
 
+  /** A book is orderable only once it has actually been personalised. Clicking
+   *  straight through the builder without typing anything left the subject as
+   *  the placeholder ("Your kid" / "The two of you" / "Your family") and that
+   *  book could be ordered, printed and posted. */
+  orderableBook() {
+    const b = this.state.book;
+    if (!b) return null;
+    const placeholders = ['your kid', 'the two of you', 'your family', 'them', 'you'];
+    const names = String(b.names || '').trim();
+    if (!names || placeholders.indexOf(names.toLowerCase()) > -1) return null;
+    const data = (b.data && typeof b.data === 'object') ? b.data : {};
+    if (!String(data.name || '').trim()) return null;
+    return b;
+  }
+
   ship(key, val) {
     const ship = { ...this.state.ship, [key]: val };
     // Clear a field's error as soon as it becomes valid, so the form stops
@@ -618,24 +633,29 @@ class Component extends DCLogic {
       total: this.money(total),
       reassurance: 'We print from the proof you approved. If a name is wrong when it arrives, we reprint it and you pay nothing.',
 
-      noBook: !this.state.book,
+      noBook: !this.orderableBook(),
+      noBookReason: this.state.book
+        ? 'This book does not have a name in it yet, so there is nothing to print.'
+        : 'There is no book to order yet — it looks like this page was opened on its own.',
+      noBookHref: './Book Builder.dc.html?for=' + a,
+      noBookCta: this.state.book ? 'Add their details' : 'Start your book',
       placeStyle: {
-        background: this.state.book ? 'var(--color-cta)' : 'var(--color-neutral-400)',
+        background: this.orderableBook() ? 'var(--color-cta)' : 'var(--color-neutral-400)',
         color: 'var(--color-bg)',
-        border: `2px solid ${this.state.book ? 'var(--color-cta)' : 'var(--color-neutral-400)'}`,
+        border: `2px solid ${this.orderableBook() ? 'var(--color-cta)' : 'var(--color-neutral-400)'}`,
         fontFamily: 'var(--font-heading)', fontWeight: 800, fontSize: '15px',
         letterSpacing: '0.04em', textTransform: 'uppercase', padding: '18px 26px',
-        cursor: this.state.book ? 'pointer' : 'not-allowed',
+        cursor: this.orderableBook() ? 'pointer' : 'not-allowed',
         transition: 'background .2s ease,letter-spacing .3s ease',
       },
-      placeHover: this.state.book
+      placeHover: this.orderableBook()
         ? 'background:var(--color-cta-hover);letter-spacing:0.1em;'
         : '',
       onPlace: () => {
         // Reached directly (bookmark, shared link, cleared storage) there is no
         // book to print, but the form still rendered and still issued an order
         // number. Never confirm an order for a book that does not exist.
-        if (!this.state.book) return;
+        if (!this.orderableBook()) return;
         const errors = this.validateShip();
         if (Object.keys(errors).length) {
           this.setState({ errors });

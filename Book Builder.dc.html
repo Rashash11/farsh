@@ -123,10 +123,13 @@
               <label style="{{ f.wrapStyle }}">
                 <span style="display:block;font-size:11px;letter-spacing:0.16em;text-transform:uppercase;color:var(--color-neutral-600);margin-bottom:8px;">{{ f.label }}</span>
                 <sc-if value="{{ f.isLong }}" hint-placeholder-val="{{ false }}">
-                  <textarea value="{{ f.value }}" onChange="{{ f.onInput }}" placeholder="{{ f.placeholder }}" rows="3" style="width:100%;box-sizing:border-box;padding:13px 14px;border:2px solid var(--color-text);background:var(--color-bg);font-size:15px;line-height:1.5;color:var(--color-text);resize:vertical;"></textarea>
+                  <textarea data-field="{{ f.key }}" value="{{ f.value }}" onChange="{{ f.onInput }}" placeholder="{{ f.placeholder }}" rows="3" required="{{ f.required }}" aria-invalid="{{ f.ariaInvalid }}" aria-describedby="{{ f.describedBy }}" style="{{ f.textareaStyle }}"></textarea>
                 </sc-if>
                 <sc-if value="{{ f.isShort }}" hint-placeholder-val="{{ true }}">
-                  <input value="{{ f.value }}" onChange="{{ f.onInput }}" placeholder="{{ f.placeholder }}" style="width:100%;box-sizing:border-box;padding:13px 14px;border:2px solid var(--color-text);background:var(--color-bg);font-size:15px;color:var(--color-text);"/>
+                  <input data-field="{{ f.key }}" value="{{ f.value }}" onChange="{{ f.onInput }}" placeholder="{{ f.placeholder }}" required="{{ f.required }}" aria-invalid="{{ f.ariaInvalid }}" aria-describedby="{{ f.describedBy }}" style="{{ f.inputStyle }}"/>
+                </sc-if>
+                <sc-if value="{{ f.hasError }}" hint-placeholder-val="{{ false }}">
+                  <span id="{{ f.errorId }}" role="alert" style="{{ f.errorStyle }}">{{ f.error }}</span>
                 </sc-if>
               </label>
             </sc-for>
@@ -332,7 +335,7 @@ const DIRECTIONS = {
 class Component extends DCLogic {
   state = {
     audience: 'child', step: 1, direction: 0, titleIdx: 0, tags: [],
-    dedication: '', photo: null, photoConsent: false, photoError: '',
+    dedication: '', photo: null, photoConsent: false, photoError: '', detailErrors: {},
     data: { child: {}, couple: {}, family: {} },
   };
 
@@ -508,9 +511,40 @@ class Component extends DCLogic {
     window.addEventListener('mousemove', this.onMove, { passive: true });
   }
 
+  /** Fields without which the book is not personalised at all. Everything else
+   *  can be left blank and the story still works. */
+  requiredFields() {
+    return { child: ['name'], couple: ['name', 'partner'], family: ['name'] }[this.state.audience] || ['name'];
+  }
+
+  /** @returns {object} key -> message for each missing required field. */
+  detailErrors() {
+    const v = this.vals();
+    const labels = (FIELDS[this.state.audience] || []).reduce((m, f) => (m[f.k] = f.label, m), {});
+    const errors = {};
+    for (const k of this.requiredFields()) {
+      if (!String(v[k] || '').trim()) {
+        errors[k] = `${labels[k] || 'This'} goes on the cover and into every page — we need it.`;
+      }
+    }
+    return errors;
+  }
+
   go(step) {
     const clamped = Math.max(1, Math.min(4, step));
     if (clamped === this.state.step) return;
+    // Leaving the details step forwards without a name produced a real,
+    // orderable book called "Your kid and the door in the garden wall". The
+    // name is the entire product, so it is the one thing that is required.
+    if (this.state.step === 2 && clamped > 2) {
+      const errors = this.detailErrors();
+      if (Object.keys(errors).length) {
+        this.setState({ detailErrors: errors });
+        const first = document.querySelector(`[data-field="${Object.keys(errors)[0]}"]`);
+        if (first) { first.focus(); first.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
+        return;
+      }
+    }
     const panel = document.querySelector('[data-panel]');
     if (panel && !this.reduced()) {
       panel.style.animation = 'none';
@@ -522,6 +556,11 @@ class Component extends DCLogic {
   }
 
   field(key, val) {
+    if (this.state.detailErrors[key] && String(val || '').trim()) {
+      const detailErrors = { ...this.state.detailErrors };
+      delete detailErrors[key];
+      this.setState({ detailErrors });
+    }
     const a = this.state.audience;
     const data = { ...this.state.data, [a]: { ...this.state.data[a], [key]: val } };
     this.setState({ data });
@@ -667,12 +706,27 @@ class Component extends DCLogic {
         family: 'Names, the house everyone remembers, and the year you want the book to hold.',
       }[a],
 
-      fields: FIELDS[a].map((f) => ({
-        label: f.label, placeholder: f.ph, value: v[f.k] || '',
-        isLong: !!f.long, isShort: !f.long,
-        wrapStyle: { display: 'block', gridColumn: f.long ? '1 / -1' : 'auto' },
-        onInput: (e) => this.field(f.k, e.target.value),
-      })),
+      fields: FIELDS[a].map((f) => {
+        const err = this.state.detailErrors[f.k] || '';
+        const box = {
+          width: '100%', boxSizing: 'border-box', padding: '13px 14px',
+          border: `2px solid ${err ? 'var(--color-accent-700)' : 'var(--color-text)'}`,
+          background: 'var(--color-bg)', fontSize: '15px', color: 'var(--color-text)',
+        };
+        return {
+          key: f.k, label: f.label, placeholder: f.ph, value: v[f.k] || '',
+          isLong: !!f.long, isShort: !f.long,
+          required: this.requiredFields().indexOf(f.k) > -1,
+          ariaInvalid: err ? 'true' : 'false',
+          error: err, hasError: !!err, errorId: `derr-${f.k}`, describedBy: err ? `derr-${f.k}` : '',
+          inputStyle: box,
+          textareaStyle: { ...box, lineHeight: 1.5, resize: 'vertical' },
+          errorStyle: { display: 'block', marginTop: '6px', fontSize: '12px', lineHeight: 1.5,
+                        color: 'var(--color-accent-700)', fontWeight: 700 },
+          wrapStyle: { display: 'block', gridColumn: f.long ? '1 / -1' : 'auto' },
+          onInput: (e) => this.field(f.k, e.target.value),
+        };
+      }),
 
       showPhotoUpload: a !== 'family',
       hasPhoto: !!this.state.photo,
