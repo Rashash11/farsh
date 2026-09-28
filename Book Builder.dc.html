@@ -143,7 +143,7 @@
               <sc-if value="{{ noPhotoYet }}" hint-placeholder-val="{{ true }}">
                 <label style="display:flex;align-items:flex-start;gap:10px;margin-bottom:10px;cursor:pointer;">
                   <input type="checkbox" checked="{{ photoConsent }}" onChange="{{ onPhotoConsent }}" style="margin-top:3px;"/>
-                  <span style="font-size:13px;line-height:1.5;color:var(--color-neutral-700);max-width:46ch;">I have the right to use this photo and consent to it being used once to illustrate this book. It is not stored.</span>
+                  <span style="font-size:13px;line-height:1.5;color:var(--color-neutral-700);max-width:46ch;">I have the right to use this photo, and I agree it can be sent to the AI service that draws the illustrations. It stays in this browser while you make the book — we never print it, and we do not keep it on our servers.</span>
                 </label>
                 <input type="file" accept="image/*" onChange="{{ onPhotoPick }}" disabled="{{ photoPickDisabled }}" style="font-size:13px;"/>
                 <sc-if value="{{ photoError }}" hint-placeholder-val="{{ false }}">
