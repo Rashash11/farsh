@@ -93,18 +93,27 @@ app.post('/api/generate-book', async (req, res) => {
     const { pages, scenes } = await generateBookPages(book, process.env.ANTHROPIC_API_KEY);
     res.json({ pages, scenes });
   } catch (err) {
+    // Two audiences, two texts. `message` is read straight into the page a
+    // customer is looking at, so it never carries setup instructions or
+    // internals; the operator-facing version goes to the log, which is where
+    // the README already tells you to look.
     console.error('[generate-book] failed:', err.message);
-    if (err.message === 'missing_api_key' || err.status === 401 || /Could not resolve authentication/.test(err.message)) {
+    const missingKey = err.message === 'missing_api_key' || /Could not resolve authentication/.test(err.message);
+    if (missingKey || err.status === 401) {
+      console.error(
+        missingKey
+          ? '  -> no ANTHROPIC_API_KEY. Copy .env.example to .env, add your key, and restart the server.'
+          : '  -> ANTHROPIC_API_KEY was rejected (401). The key is set but invalid, revoked or out of credit.',
+      );
       return res.status(400).json({
         error: 'missing_api_key',
-        message: 'No ANTHROPIC_API_KEY configured. Copy .env.example to .env, add your key, and restart the server.',
+        message: 'Our writer is not available right now.',
       });
     }
     const status = /^generation_refused/.test(err.message) ? 422 : 502;
     res.status(status).json({
       error: 'generation_failed',
-      message: 'Could not write the book right now. Showing a sample page instead.',
-      detail: err.message,
+      message: 'We could not write the book just now.',
     });
   }
 });

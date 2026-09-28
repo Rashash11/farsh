@@ -148,7 +148,7 @@
       </div>
     </sc-if>
     <sc-if value="{{ genErrorView }}" hint-placeholder-val="{{ false }}">
-      <div style="font-size:11px;letter-spacing:0.02em;color:rgba(240,230,211,0.6);margin-top:10px;">Couldn't reach the writer ({{ genErrorMessage }}) — showing a sample page instead.</div>
+      <div role="status" style="font-size:11px;letter-spacing:0.02em;color:rgba(240,230,211,0.6);margin-top:10px;">{{ genErrorMessage }} Showing a sample page instead.</div>
     </sc-if>
 
     <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:18px;">
@@ -409,12 +409,12 @@ class Component extends DCLogic {
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok || !Array.isArray(json.pages)) {
-        throw new Error((json && json.message) || 'Could not write the book right now.');
+        throw new Error((json && json.message) || 'We could not write the book just now.');
       }
       this.patchBook({ pages: json.pages, scenes: Array.isArray(json.scenes) ? json.scenes : [], pagesFor: fp });
       this.setState({ generating: false, genError: null });
     } catch (e) {
-      this.setState({ generating: false, genError: (e && e.message) || 'Could not write the book right now.' });
+      this.setState({ generating: false, genError: (e && e.message) || 'We could not write the book just now.' });
     } finally {
       if (this.jokeTimer) { clearInterval(this.jokeTimer); this.jokeTimer = null; }
     }

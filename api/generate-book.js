@@ -30,18 +30,26 @@ module.exports = async (req, res) => {
     const { pages, scenes } = await generateBookPages(book, process.env.ANTHROPIC_API_KEY);
     res.status(200).json({ pages, scenes });
   } catch (err) {
+    // See the note in server.js: `message` is customer-facing, the detail
+    // below is for whoever is reading the function logs.
     console.error('[generate-book] failed:', err.message);
-    if (err.message === 'missing_api_key' || err.status === 401 || /Could not resolve authentication/.test(err.message)) {
+    const missingKey = err.message === 'missing_api_key' || /Could not resolve authentication/.test(err.message);
+    if (missingKey || err.status === 401) {
+      console.error(
+        missingKey
+          ? '  -> ANTHROPIC_API_KEY is not set on this deployment.'
+          : '  -> ANTHROPIC_API_KEY was rejected (401): set but invalid, revoked or out of credit.',
+      );
       res.status(400).json({
         error: 'missing_api_key',
-        message: 'No ANTHROPIC_API_KEY configured on the server yet.',
+        message: 'Our writer is not available right now.',
       });
       return;
     }
     const status = /^generation_refused/.test(err.message) ? 422 : 502;
     res.status(status).json({
       error: 'generation_failed',
-      message: 'Could not write the book right now. Showing a sample page instead.',
+      message: 'We could not write the book just now.',
     });
   }
 };
