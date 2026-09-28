@@ -1,15 +1,14 @@
 // Vercel serverless twin of /api/redraw-page in server.js.
 const { redrawPlate } = require('../lib/generateArt');
 const { checkRateLimit } = require('../lib/rateLimit');
+const { clientIp } = require('../lib/clientIp');
 
 module.exports = async (req, res) => {
   if (req.method !== 'POST') {
     res.status(405).json({ error: 'method_not_allowed', message: 'POST only.' });
     return;
   }
-  const fwd = req.headers['x-forwarded-for'];
-  const ip = (typeof fwd === 'string' && fwd.split(',')[0].trim()) ||
-    (req.socket && req.socket.remoteAddress) || 'unknown';
+  const ip = clientIp(req);
   const limited = checkRateLimit(ip, 'art');
   if (limited) {
     res.setHeader('Retry-After', String(limited.retryAfterSeconds));

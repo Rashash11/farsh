@@ -16,12 +16,15 @@ const express = require('express');
 const { generateBookPages } = require('./lib/generateBook');
 const { generateCoverArt, generatePlates, redrawPlate } = require('./lib/generateArt');
 const { checkRateLimit } = require('./lib/rateLimit');
+const { clientIp } = require('./lib/clientIp');
 
 const app = express();
 const PORT = process.env.PORT || 4000;
 
 // Behind a reverse proxy / hosting platform, use the forwarded client IP
-// so rate limits apply per visitor rather than per proxy.
+// so rate limits apply per visitor rather than per proxy. Rate limiting does
+// NOT go through req.ip — see lib/clientIp.js for why the forwarded chain has
+// to be read from the right, and only when a proxy is actually in front.
 app.set('trust proxy', 1);
 
 app.get('/', (req, res) => res.redirect('/Landing Page.dc.html'));
@@ -43,7 +46,7 @@ const artJson = express.json({ limit: '8mb' });
 
 function artRoute(handler) {
   return async (req, res) => {
-    const limited = checkRateLimit(req.ip || 'unknown', 'art');
+    const limited = checkRateLimit(clientIp(req), 'art');
     if (limited) {
       res.set('Retry-After', String(limited.retryAfterSeconds));
       return res.status(limited.status).json({ error: limited.error, message: limited.message });
@@ -73,7 +76,7 @@ app.post('/api/redraw-page', artJson, artRoute((book, body) => redrawPlate(book,
 app.use(express.json({ limit: '256kb' }));
 
 app.post('/api/generate-book', async (req, res) => {
-  const limited = checkRateLimit(req.ip || 'unknown');
+  const limited = checkRateLimit(clientIp(req));
   if (limited) {
     res.set('Retry-After', String(limited.retryAfterSeconds));
     return res.status(limited.status).json({ error: limited.error, message: limited.message });

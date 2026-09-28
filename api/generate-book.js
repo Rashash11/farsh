@@ -4,6 +4,7 @@
 
 const { generateBookPages } = require('../lib/generateBook');
 const { checkRateLimit } = require('../lib/rateLimit');
+const { clientIp } = require('../lib/clientIp');
 
 module.exports = async (req, res) => {
   if (req.method !== 'POST') {
@@ -11,9 +12,7 @@ module.exports = async (req, res) => {
     return;
   }
 
-  const fwd = req.headers['x-forwarded-for'];
-  const ip = (typeof fwd === 'string' && fwd.split(',')[0].trim()) ||
-    (req.socket && req.socket.remoteAddress) || 'unknown';
+  const ip = clientIp(req);
   const limited = checkRateLimit(ip);
   if (limited) {
     res.setHeader('Retry-After', String(limited.retryAfterSeconds));
