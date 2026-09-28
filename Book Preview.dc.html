@@ -227,6 +227,16 @@ const JOKES = [
   'Counting how many times "and then" was used...',
 ];
 
+// Family names are usually plural ("The Haddads"), and the field's own
+// placeholder is one — so appending a bare "'s" produced "The Haddads's" on
+// the opening page of almost every family book. Names already ending in s
+// take the bare apostrophe.
+function possessive(name) {
+  const n = (name || '').trim();
+  if (!n) return n;
+  return /s$/i.test(n) ? n + "'" : n + "'s";
+}
+
 class Component extends DCLogic {
   state = { audience: 'child', page: 0, editing: false, draft: '', edits: {}, book: null, generating: false, genError: null, jokeIdx: 0, paintingCover: false, redrawing: false };
 
@@ -490,7 +500,7 @@ class Component extends DCLogic {
         { chapter: 'The last page', text: 'Everything since has been ordinary evenings. There is no better ending than that, and no better place to stop.' },
       ],
       family: [
-        { chapter: 'How it starts', text: 'Every family has a table. This one is ' + n + "'s, and it is louder than it looks." },
+        { chapter: 'How it starts', text: 'Every family has a table. This one is ' + possessive(n) + ', and it is louder than it looks.' },
         { chapter: 'The old house', text: 'The stairs creaked in three places and everyone learned which one to avoid coming home late.' },
         { chapter: 'A page each', text: 'Everyone gets one page. Nobody gets two, no matter how much they argue for it.' },
         { chapter: 'The summer', text: 'Sand in everything, one wrong turn that became the story, and nobody wanting to go home.' },
