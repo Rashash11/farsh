@@ -162,7 +162,14 @@
             </div>
           </div>
 
-          <button onClick="{{ onPlace }}" style="background:var(--color-cta);color:var(--color-bg);border:2px solid var(--color-cta);font-family:var(--font-heading);font-weight:800;font-size:15px;letter-spacing:0.04em;text-transform:uppercase;padding:18px 26px;cursor:pointer;transition:background .2s ease,letter-spacing .3s ease;" style-hover="background:var(--color-cta-hover);letter-spacing:0.1em;">Place the order</button>
+          <sc-if value="{{ noBook }}">
+            <div role="status" style="border:2px solid var(--color-text);background:var(--color-bg);padding:16px 18px;margin-bottom:16px;font-size:13px;line-height:1.6;">
+              There is no book to order yet — it looks like this page was opened on its own.
+              <a href="./Book Builder.dc.html" style="text-decoration:underline;font-weight:700;">Start your book</a>
+              and you will come back here at the end.
+            </div>
+          </sc-if>
+          <button onClick="{{ onPlace }}" disabled="{{ noBook }}" style="{{ placeStyle }}" style-hover="{{ placeHover }}">Place the order</button>
           <div style="font-size:12px;line-height:1.6;color:var(--color-neutral-700);">{{ reassurance }}</div>
         </div>
       </div>
@@ -553,7 +560,24 @@ class Component extends DCLogic {
       total: this.money(total),
       reassurance: 'We print from the proof you approved. If a name is wrong when it arrives, we reprint it and you pay nothing.',
 
+      noBook: !this.state.book,
+      placeStyle: {
+        background: this.state.book ? 'var(--color-cta)' : 'var(--color-neutral-400)',
+        color: 'var(--color-bg)',
+        border: `2px solid ${this.state.book ? 'var(--color-cta)' : 'var(--color-neutral-400)'}`,
+        fontFamily: 'var(--font-heading)', fontWeight: 800, fontSize: '15px',
+        letterSpacing: '0.04em', textTransform: 'uppercase', padding: '18px 26px',
+        cursor: this.state.book ? 'pointer' : 'not-allowed',
+        transition: 'background .2s ease,letter-spacing .3s ease',
+      },
+      placeHover: this.state.book
+        ? 'background:var(--color-cta-hover);letter-spacing:0.1em;'
+        : '',
       onPlace: () => {
+        // Reached directly (bookmark, shared link, cleared storage) there is no
+        // book to print, but the form still rendered and still issued an order
+        // number. Never confirm an order for a book that does not exist.
+        if (!this.state.book) return;
         const no = 'FA-' + String(Math.floor(1000 + Math.random() * 8999));
         this.setState({ placed: true, order: no });
         window.scrollTo({ top: 0, behavior: 'smooth' });

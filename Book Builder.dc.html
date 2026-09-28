@@ -339,6 +339,14 @@ class Component extends DCLogic {
     const seed = this.props.startAudience;
     const map = { child: 'child', couple: 'couple', family: 'family', kid: 'child', two: 'couple' };
     const pick = map[q] || map[(seed || '').toLowerCase()] || null;
+
+    // Bring back a book in progress BEFORE anything else touches state.
+    // componentDidUpdate() calls save() on every change, so without this the
+    // first render wrote defaults straight over whatever the visitor had
+    // already typed — a refresh, or a backgrounded tab being evicted on a
+    // phone, silently threw away the whole form.
+    this.restore(map[q] || null);
+
     if (pick && pick !== this.state.audience) this.setState({ audience: pick });
     // Carry a name typed on the landing page hero straight into "Their
     // name" here, so that first spark of personalization doesn't reset.
@@ -362,8 +370,54 @@ class Component extends DCLogic {
         photo: this.state.audience === 'family' ? null : this.state.photo,
         photoConsent: this.state.audience === 'family' ? false : this.state.photoConsent,
         data: this.state.data[this.state.audience] || {},
+        // Extra key, read only by this page — Preview and Checkout pick the
+        // fields they need by name and ignore it.
+        step: this.state.step,
       }));
     } catch (e) {}
+  }
+
+  /**
+   * Inverse of save(). `save()` stores a flattened projection (a title STRING
+   * rather than an index, and only the current audience's data), so rebuilding
+   * state means matching the title back to its option and re-nesting the data.
+   *
+   * @param {string|null} forced - audience from ?for=, which wins over the
+   *   stored one. Asking for a different audience than the saved book means
+   *   the visitor deliberately started something else, so the saved details
+   *   (which belong to the other audience) are not carried across.
+   */
+  restore(forced) {
+    let saved;
+    try { saved = JSON.parse(localStorage.getItem('farsh.book') || 'null'); } catch (e) { return; }
+    if (!saved || typeof saved !== 'object') return;
+
+    const valid = ['child', 'couple', 'family'];
+    const savedAudience = valid.includes(saved.audience) ? saved.audience : null;
+    if (!savedAudience) return;
+    if (forced && forced !== savedAudience) return; // starting a different book
+
+    const next = { audience: savedAudience };
+
+    if (Number.isInteger(saved.direction) && saved.direction >= 0) next.direction = saved.direction;
+    if (Array.isArray(saved.tags)) next.tags = saved.tags.filter((t) => typeof t === 'string');
+    if (typeof saved.dedication === 'string') next.dedication = saved.dedication;
+    if (typeof saved.photo === 'string' || saved.photo === null) next.photo = saved.photo;
+    if (typeof saved.photoConsent === 'boolean') next.photoConsent = saved.photoConsent;
+    if (saved.data && typeof saved.data === 'object' && !Array.isArray(saved.data)) {
+      next.data = { ...this.state.data, [savedAudience]: saved.data };
+    }
+    if (Number.isInteger(saved.step)) next.step = Math.min(Math.max(saved.step, 1), 4);
+
+    // Title is stored as text; map it back to the option it came from once the
+    // name it was built from is in place. No match (options changed, or an old
+    // book) just falls back to the first title rather than losing the restore.
+    this.state = { ...this.state, ...next };
+    if (typeof saved.title === 'string') {
+      const idx = this.titleOptions().indexOf(saved.title);
+      this.state.titleIdx = idx > -1 ? idx : 0;
+    }
+    this.setState({});
   }
   componentWillUnmount() {
     if (this.onMove) window.removeEventListener('mousemove', this.onMove);
