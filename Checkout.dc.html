@@ -175,7 +175,10 @@
           <sc-if value="{{ shipSummary }}">
             <div role="alert" style="margin-bottom:14px;font-size:13px;line-height:1.6;color:var(--color-accent-700);font-weight:700;">{{ shipSummary }}</div>
           </sc-if>
-          <button onClick="{{ onPlace }}" disabled="{{ noBook }}" style="{{ placeStyle }}" style-hover="{{ placeHover }}">Place the order</button>
+          <sc-if value="{{ orderError }}">
+            <div role="alert" style="margin-bottom:14px;padding:14px 16px;border:2px solid var(--color-accent-700);font-size:13px;line-height:1.6;color:var(--color-accent-700);font-weight:700;">{{ orderError }}</div>
+          </sc-if>
+          <button onClick="{{ onPlace }}" disabled="{{ placeDisabled }}" style="{{ placeStyle }}" style-hover="{{ placeHover }}">{{ placeLabel }}</button>
           <div style="font-size:12px;line-height:1.6;color:var(--color-neutral-700);">{{ reassurance }}</div>
         </div>
       </div>
@@ -310,6 +313,7 @@ class Component extends DCLogic {
   state = {
     audience: 'child', format: 1, speed: 'Standard · 5 days', gift: false,
     placed: false, order: '', book: null, ship: {}, errors: {}, painting: false, jokeIdx: 0, plateLimited: false,
+    submitting: false, orderError: '',
   };
 
   componentDidMount() {
@@ -634,6 +638,7 @@ class Component extends DCLogic {
       reassurance: 'We print from the proof you approved. If a name is wrong when it arrives, we reprint it and you pay nothing.',
 
       noBook: !this.orderableBook(),
+      placeDisabled: !this.orderableBook() || this.state.submitting,
       noBookReason: this.state.book
         ? 'This book does not have a name in it yet, so there is nothing to print.'
         : 'There is no book to order yet — it looks like this page was opened on its own.',
@@ -651,11 +656,14 @@ class Component extends DCLogic {
       placeHover: this.orderableBook()
         ? 'background:var(--color-cta-hover);letter-spacing:0.1em;'
         : '',
-      onPlace: () => {
+      placeLabel: this.state.submitting ? 'Placing the order…' : 'Place the order',
+      orderError: this.state.orderError,
+      onPlace: async () => {
         // Reached directly (bookmark, shared link, cleared storage) there is no
         // book to print, but the form still rendered and still issued an order
         // number. Never confirm an order for a book that does not exist.
         if (!this.orderableBook()) return;
+        if (this.state.submitting) return;         // no double submit
         const errors = this.validateShip();
         if (Object.keys(errors).length) {
           this.setState({ errors });
@@ -665,10 +673,38 @@ class Component extends DCLogic {
           if (el) { el.focus(); el.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
           return;
         }
-        const no = 'FA-' + String(Math.floor(1000 + Math.random() * 8999));
-        this.setState({ placed: true, order: no });
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-        this.paintPlates();
+
+        // The order number now comes from the server, and only after the order
+        // email has actually gone out. Confirming locally first — as this used
+        // to — told people their book was being made when nothing had left the
+        // browser.
+        this.setState({ submitting: true, orderError: '' });
+        try {
+          const res = await fetch('/api/place-order', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              book: this.state.book,
+              ship: this.state.ship,
+              format: fmt.title,
+              speed: this.state.speed,
+              gift: this.state.gift,
+              total: this.money(total),
+            }),
+          });
+          const json = await res.json().catch(() => ({}));
+          if (!res.ok || !json.orderNumber) {
+            throw new Error(json.message || 'We could not place that order just now.');
+          }
+          this.setState({ submitting: false, placed: true, order: json.orderNumber });
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+          this.paintPlates();
+        } catch (err) {
+          this.setState({
+            submitting: false,
+            orderError: (err && err.message) || 'We could not place that order just now. Please try again.',
+          });
+        }
       },
 
       orderNo: this.state.order || 'FA-0000',

@@ -371,6 +371,10 @@ class Component extends DCLogic {
     try {
       localStorage.setItem('farsh.book', JSON.stringify({
         audience: this.state.audience, direction: this.state.direction,
+        // The index alone is meaningless to whoever ends up making the book
+        // (it lands in the order email), so carry the name it stands for.
+        directionName: (DIRECTIONS[this.state.audience] || [])[this.state.direction]
+          ? DIRECTIONS[this.state.audience][this.state.direction].title : '',
         title: this.titleOptions()[Math.min(this.state.titleIdx, 2)],
         names: this.names(), tags: this.state.tags, dedication: this.state.dedication,
         photo: this.state.audience === 'family' ? null : this.state.photo,

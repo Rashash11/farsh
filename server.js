@@ -17,6 +17,7 @@ const { generateBookPages } = require('./lib/generateBook');
 const { generateCoverArt, generatePlates, redrawPlate } = require('./lib/generateArt');
 const { checkRateLimit } = require('./lib/rateLimit');
 const { clientIp } = require('./lib/clientIp');
+const { placeOrder } = require('./lib/placeOrder');
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -63,6 +64,33 @@ function artRoute(handler) {
     }
   };
 }
+
+// An order carries the whole book, photo included, so it needs the bigger body
+// limit — registered here with the other 8mb routes for the same reason.
+app.post('/api/place-order', artJson, async (req, res) => {
+  const limited = checkRateLimit(clientIp(req), 'order');
+  if (limited) {
+    res.set('Retry-After', String(limited.retryAfterSeconds));
+    return res.status(limited.status).json({ error: limited.error, message: limited.message });
+  }
+  try {
+    const { orderNumber } = await placeOrder(req.body && typeof req.body === 'object' ? req.body : {});
+    res.json({ orderNumber });
+  } catch (err) {
+    if (err.code === 'invalid_order') {
+      console.error('[place-order] rejected:', err.problems.join(' '));
+      return res.status(400).json({ error: 'invalid_order', message: 'That order is missing something we need.' });
+    }
+    console.error('[place-order] FAILED — no order was recorded:', err.message);
+    if (/not_configured/.test(err.message)) {
+      console.error('  -> set RESEND_API_KEY and ORDER_EMAIL_TO in .env, or orders go nowhere.');
+    }
+    res.status(502).json({
+      error: 'order_failed',
+      message: 'We could not place that order just now. Nothing has been charged or started — please try again.',
+    });
+  }
+});
 
 app.post('/api/generate-cover', artJson, artRoute((book) => generateCoverArt(book)));
 app.post('/api/generate-plates', artJson, artRoute((book) => generatePlates(book)));
@@ -125,5 +153,8 @@ app.listen(PORT, () => {
   console.log(`farsh! running at http://localhost:${PORT}`);
   if (!process.env.ANTHROPIC_API_KEY) {
     console.log('  (no ANTHROPIC_API_KEY set — book generation will fall back to sample text)');
+  }
+  if (!process.env.RESEND_API_KEY || !process.env.ORDER_EMAIL_TO) {
+    console.log('  (no RESEND_API_KEY / ORDER_EMAIL_TO — placing an order will FAIL loudly rather than lose it)');
   }
 });
