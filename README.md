@@ -28,9 +28,10 @@ read from `.env` once at startup.
 - **Story text** is real — written by Claude per the details you enter in
   the builder (name, age, what they look like, what they love / how the
   couple met / etc.), via `POST /api/generate-book`.
-- **"Place the order" on Checkout is a UI simulation**, same as before this
-  work — it shows a confirmation and a fake order number, but doesn't charge
-  a card or send anything anywhere. No payment processing is wired up.
+- **"Place the order" on Checkout is real, except payment.** It validates the
+  order server-side, emails the full order to `ORDER_EMAIL_TO` via Resend,
+  and only then returns a real order number — that email *is* the order
+  record. No card is ever charged; no payment processing is wired up.
 - **Cover and page art** is real too, when `GEMINI_API_KEY` is set — see
   "Illustrations" below. Without a key, covers and pages show the original
   typographic art, same silent fallback as story generation.
