@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -9,6 +9,8 @@
 <body>
 <x-dc>
 <helmet>
+  <title>Read the proof — farsh!</title>
+  <meta name="description" content="Read your personalized book before it prints, cover art and all.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;800&display=swap" rel="stylesheet">
@@ -83,7 +85,7 @@
 </helmet>
 
 <div style="{{ shellStyle }}">
-<div class="page-sheet" style="max-width:1440px;margin:0 auto;border-left:2px solid var(--color-divider);border-right:2px solid var(--color-divider);min-height:100vh;">
+<div class="page-sheet" role="main" style="max-width:1440px;margin:0 auto;border-left:2px solid var(--color-divider);border-right:2px solid var(--color-divider);min-height:100vh;">
 
   <nav style="display:flex;align-items:center;justify-content:space-between;gap:20px;padding:16px clamp(16px,3vw,40px);border-bottom:2px solid var(--color-divider);">
     <div style="display:flex;align-items:baseline;gap:14px;">
@@ -110,10 +112,10 @@
         <div data-cover-art style="{{ coverArtStyle }}"></div>
       </sc-if>
       <sc-if value="{{ paintingCover }}" hint-placeholder-val="{{ false }}">
-        <span style="font-size:12px;letter-spacing:0.1em;text-transform:uppercase;color:var(--color-accent-700);">Painting the cover…</span>
+        <span aria-live="polite" style="font-size:12px;letter-spacing:0.1em;text-transform:uppercase;color:var(--color-accent-700);">Painting the cover…</span>
       </sc-if>
       <sc-if value="{{ artNoteView }}" hint-placeholder-val="{{ false }}">
-        <span style="font-size:12px;color:var(--color-neutral-600);">{{ artNote }}</span>
+        <span aria-live="polite" style="font-size:12px;color:var(--color-neutral-600);">{{ artNote }}</span>
       </sc-if>
       <div data-sticker data-rot="-6" style="background:var(--color-cta);color:var(--color-bg);font-family:var(--font-heading);font-weight:800;font-size:12px;letter-spacing:0.12em;text-transform:uppercase;padding:11px 15px;box-shadow:var(--shadow-md);transform:rotate(-6deg);animation:stampIn .5s cubic-bezier(.16,1,.3,1) both;">Proof · not printed yet</div>
     </div>
@@ -563,7 +565,7 @@ class Component extends DCLogic {
     const writing = this.state.generating;
     const joke = JOKES[this.state.jokeIdx % JOKES.length];
     const body = writing
-      ? '<p style="font-family:var(--font-heading);font-weight:400;font-size:clamp(13px,1.6vw,22px);line-height:1.35;letter-spacing:-0.02em;margin:0 0 8px;color:var(--color-neutral-600);font-style:italic;">Writing your book\u2026</p>' +
+      ? '<p aria-live="polite" style="font-family:var(--font-heading);font-weight:400;font-size:clamp(13px,1.6vw,22px);line-height:1.35;letter-spacing:-0.02em;margin:0 0 8px;color:var(--color-neutral-600);font-style:italic;">Writing your book\u2026</p>' +
         '<p style="font-size:clamp(11px,1.1vw,14px);line-height:1.4;margin:0;color:var(--color-accent-700);">' + this.esc(joke) + '</p>'
       : '<p style="font-family:var(--font-heading);font-weight:400;font-size:clamp(13px,1.6vw,22px);line-height:1.35;letter-spacing:-0.02em;margin:0;color:var(--color-text);">' + this.esc(s.text) + '</p>';
     return '<div class="xb-pg xb-pg-text">' +

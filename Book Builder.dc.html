@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -9,6 +9,8 @@
 <body>
 <x-dc>
 <helmet>
+  <title>Build your book — farsh!</title>
+  <meta name="description" content="Pick who the book is for and tell us about them — farsh! writes and illustrates the story around your details.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;800&display=swap" rel="stylesheet">
@@ -66,7 +68,7 @@
 </helmet>
 
 <div style="{{ shellStyle }}">
-<div class="page-sheet" style="max-width:1440px;margin:0 auto;border-left:2px solid var(--color-divider);border-right:2px solid var(--color-divider);min-height:100vh;">
+<div class="page-sheet" role="main" style="max-width:1440px;margin:0 auto;border-left:2px solid var(--color-divider);border-right:2px solid var(--color-divider);min-height:100vh;">
 
   <nav style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px 20px;padding:16px clamp(16px,3vw,40px);border-bottom:2px solid var(--color-divider);">
     <div style="display:flex;align-items:baseline;gap:14px;">
