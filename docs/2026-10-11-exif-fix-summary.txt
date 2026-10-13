@@ -1,0 +1,107 @@
+FARSH! — WHAT WE DID TODAY (2026-10-11)
+========================================
+
+THE SHORT VERSION
+------------------
+We checked the site for things that could go wrong once it's public, found one
+real security bug involving customers' photos, fixed it, and confirmed nothing
+else broke. We also made a list of other things worth doing before launch
+(not fixed yet — see "STILL TO DO" at the bottom).
+
+
+THE BUG — IN PLAIN WORDS
+-------------------------
+When a parent uploads a photo in the Book Builder, that photo can carry hidden
+extra data baked into the file by their phone or camera — things like GPS
+location, the exact date/time, and sometimes the device's serial number. This
+hidden data is called EXIF metadata.
+
+We don't want that hidden data going anywhere near the AI art generator
+(Gemini), because these are photos of children and couples, and there's no
+reason the art AI — or anyone who ever sees that request — needs to know where
+a kid's bedroom is.
+
+The code already had a function to strip that hidden data out (think of it
+like a "remove GPS tag" tool). The bug was in HOW the code decided whether to
+use that tool.
+
+Every photo arrives labeled with a tag saying what kind of file it is — like
+a sticker on a package that says "this is a JPEG" or "this is a PNG." The code
+was trusting that sticker. It only ran the "remove GPS tag" tool when the
+sticker said "JPEG."
+
+The problem: that sticker is just a label anyone can write. A request could
+have a real JPEG photo (with hidden GPS data) inside it, but with a sticker
+that says "PNG" instead. The code would see the "PNG" sticker, decide "not a
+JPEG, nothing to clean," and skip the cleanup — while the real hidden JPEG
+data (and the GPS info inside it) went straight through to Gemini.
+
+Normally this isn't a problem, because our own website always puts the right
+sticker on. But the server has no way to stop someone from skipping the
+website entirely and sending a request directly with a mismatched sticker.
+That's the gap.
+
+
+THE FIX — IN PLAIN WORDS
+--------------------------
+Instead of trusting the sticker on the package, we now always open the
+package and look at what's actually inside before deciding what to do.
+
+Concretely: the "remove GPS tag" tool already knows how to look at the actual
+first few bytes of a file and tell for itself "yep, this is really a JPEG" or
+"nope, this isn't one, I'll leave it alone." It was built that way from the
+start — it just wasn't being USED that way, because the surrounding code was
+making the JPEG-or-not decision itself, based on the sticker, before ever
+calling the tool.
+
+The fix was to stop making that decision based on the sticker, and just
+always call the "remove GPS tag" tool on every photo. The tool itself safely
+does nothing if the photo isn't really a JPEG, so this doesn't break PNGs —
+it just closes the gap where a mislabeled JPEG could sneak through.
+
+One file changed: lib/generateArt.js, the function called dataUrlToPart.
+One line removed (the "if the sticker says JPEG" check), one line simplified
+(always run the strip tool). Nothing else about how photos are handled,
+stored, or sent to Gemini changed.
+
+
+HOW WE DID IT
+--------------
+1. Read through the code that handles photo uploads end-to-end to understand
+   exactly how a photo travels from the browser to Gemini.
+2. Found the spot where the mismatch could happen (the sticker-trusting
+   check).
+3. Changed it to always run the cleanup, since the cleanup tool already does
+   its own safe check internally.
+4. Ran the full automated test suite (49 tests) to make sure nothing else
+   broke — all 49 still pass.
+
+No new dependencies, no new files needed for the fix itself, no changes to
+the website pages — this was entirely a backend, server-side change.
+
+
+HOW TO EXPLAIN THIS TO SOMEONE ELSE
+-------------------------------------
+"We found that a photo's file-type label could be faked to skip our privacy
+cleanup step, which strips hidden location/device data out of uploaded
+photos before they go to our AI art tool. We fixed it so the cleanup always
+runs and checks the actual file instead of trusting the label. We tested it
+and nothing else was affected."
+
+
+STILL TO DO (found today, not fixed yet)
+------------------------------------------
+These were flagged during the same review but are separate pieces of work:
+
+1. No automated testing on every code push (no CI). Right now someone has to
+   remember to run the tests by hand before shipping.
+2. The site has no Arabic / right-to-left support, even though the Middle
+   East/North Africa region is the main market.
+3. Basic accessibility items are missing on all four pages: no page titles,
+   no "this page is in English" tag, no clear "main content" landmark, and
+   no announcement when the AI is writing/painting the book (so a
+   screen-reader user gets silence for several seconds with no feedback).
+4. The README (setup instructions file) has one outdated sentence — it still
+   says placing an order "doesn't send anything anywhere," but that changed
+   a few commits ago: orders now really do get emailed out. Just needs a
+   sentence updated so it doesn't mislead anyone reading it later.
