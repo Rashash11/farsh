@@ -139,6 +139,10 @@
           <sc-if value="{{ showPhotoUpload }}" hint-placeholder-val="{{ false }}">
             <div data-photo-section style="margin-top:18px;padding-top:16px;border-top:2px solid var(--color-divider);">
               <span style="display:block;font-size:11px;letter-spacing:0.16em;text-transform:uppercase;color:var(--color-neutral-600);margin-bottom:8px;">Required — one clear photo of their face</span>
+              <label style="display:flex;align-items:flex-start;gap:10px;margin-bottom:10px;cursor:pointer;">
+                <input type="checkbox" checked="{{ photoConsent }}" onChange="{{ onPhotoConsent }}" style="margin-top:3px;"/>
+                <span style="font-size:13px;line-height:1.5;color:var(--color-neutral-700);max-width:46ch;">I have the right to use this photo and I am this child's parent or guardian. I agree that Farsh! sends it to Google's Gemini image service to create photorealistic pictures of my child for this book, and that those pictures are stored at image links in the order. The photo itself stays in this browser until the order is placed, then it is removed.</span>
+              </label>
               <sc-if value="{{ hasPhoto }}" hint-placeholder-val="{{ false }}">
                 <div style="display:flex;align-items:center;gap:14px;">
                   <div data-photo-thumb style="{{ photoThumbStyle }}"></div>
@@ -146,10 +150,6 @@
                 </div>
               </sc-if>
               <sc-if value="{{ noPhotoYet }}" hint-placeholder-val="{{ true }}">
-                <label style="display:flex;align-items:flex-start;gap:10px;margin-bottom:10px;cursor:pointer;">
-                  <input type="checkbox" checked="{{ photoConsent }}" onChange="{{ onPhotoConsent }}" style="margin-top:3px;"/>
-                  <span style="font-size:13px;line-height:1.5;color:var(--color-neutral-700);max-width:46ch;">I have the right to use this photo and I am this child's parent or guardian. I agree that Farsh! sends it to Google's Gemini image service to create photorealistic pictures of my child for this book, and that those pictures are stored at image links in the order. The photo itself stays in this browser until the order is placed, then it is removed.</span>
-                </label>
                 <p style="font-size:12px;line-height:1.5;color:var(--color-neutral-600);margin:0 0 10px;max-width:46ch;">Face the camera, good light, nothing covering the face. Every page is made from this picture.</p>
                 <input type="file" accept="image/*" onChange="{{ onPhotoPick }}" disabled="{{ photoPickDisabled }}" style="font-size:13px;"/>
               </sc-if>
@@ -780,7 +780,7 @@ class Component extends DCLogic {
       },
       photoError: this.state.photoError,
       saveError: this.state.saveError,
-      onPhotoConsent: (e) => this.setState({ photoConsent: e.target.checked }),
+      onPhotoConsent: (e) => this.setState({ photoConsent: e.target.checked, photoError: '' }),
       onPhotoPick: async (e) => {
         const f = e.target.files && e.target.files[0];
         if (!f) return;
