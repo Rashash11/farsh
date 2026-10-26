@@ -137,8 +137,8 @@
             </sc-for>
           </div>
           <sc-if value="{{ showPhotoUpload }}" hint-placeholder-val="{{ false }}">
-            <div style="margin-top:18px;padding-top:16px;border-top:2px solid var(--color-divider);">
-              <span style="display:block;font-size:11px;letter-spacing:0.16em;text-transform:uppercase;color:var(--color-neutral-600);margin-bottom:8px;">Optional — a photo to draw them from</span>
+            <div data-photo-section style="margin-top:18px;padding-top:16px;border-top:2px solid var(--color-divider);">
+              <span style="display:block;font-size:11px;letter-spacing:0.16em;text-transform:uppercase;color:var(--color-neutral-600);margin-bottom:8px;">Required — one clear photo of their face</span>
               <sc-if value="{{ hasPhoto }}" hint-placeholder-val="{{ false }}">
                 <div style="display:flex;align-items:center;gap:14px;">
                   <div data-photo-thumb style="{{ photoThumbStyle }}"></div>
@@ -148,12 +148,13 @@
               <sc-if value="{{ noPhotoYet }}" hint-placeholder-val="{{ true }}">
                 <label style="display:flex;align-items:flex-start;gap:10px;margin-bottom:10px;cursor:pointer;">
                   <input type="checkbox" checked="{{ photoConsent }}" onChange="{{ onPhotoConsent }}" style="margin-top:3px;"/>
-                  <span style="font-size:13px;line-height:1.5;color:var(--color-neutral-700);max-width:46ch;">I have the right to use this photo, and I agree it can be sent to the AI service that draws the illustrations. It stays in this browser while you make the book — we never print it, and we do not keep it on our servers.</span>
+                  <span style="font-size:13px;line-height:1.5;color:var(--color-neutral-700);max-width:46ch;">I have the right to use this photo and I am this child's parent or guardian. I agree that Farsh! sends it to Google's Gemini image service to create photorealistic pictures of my child for this book, and that those pictures are stored at image links in the order. The photo itself stays in this browser until the order is placed, then it is removed.</span>
                 </label>
+                <p style="font-size:12px;line-height:1.5;color:var(--color-neutral-600);margin:0 0 10px;max-width:46ch;">Face the camera, good light, nothing covering the face. Every page is made from this picture.</p>
                 <input type="file" accept="image/*" onChange="{{ onPhotoPick }}" disabled="{{ photoPickDisabled }}" style="font-size:13px;"/>
-                <sc-if value="{{ photoError }}" hint-placeholder-val="{{ false }}">
-                  <div role="alert" style="margin-top:10px;font-size:13px;line-height:1.55;color:var(--color-accent-700);font-weight:700;max-width:46ch;">{{ photoError }}</div>
-                </sc-if>
+              </sc-if>
+              <sc-if value="{{ photoError }}" hint-placeholder-val="{{ false }}">
+                <div role="alert" style="margin-top:10px;font-size:13px;line-height:1.55;color:var(--color-accent-700);font-weight:700;max-width:46ch;">{{ photoError }}</div>
               </sc-if>
             </div>
           </sc-if>
@@ -247,6 +248,9 @@
 
   <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;padding:20px clamp(20px,3vw,44px);border-top:2px solid var(--color-divider);background:var(--color-bg);">
     <button onClick="{{ onBack }}" style="{{ backStyle }}">← Back</button>
+    <sc-if value="{{ saveError }}" hint-placeholder-val="{{ false }}">
+      <div role="alert" style="font-size:13px;line-height:1.55;color:var(--color-accent-700);font-weight:700;max-width:46ch;">{{ saveError }}</div>
+    </sc-if>
     <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
       <span style="font-size:12px;letter-spacing:0.1em;text-transform:uppercase;color:var(--color-neutral-600);">{{ hint }}</span>
       <sc-if value="{{ isStep4 }}" hint-placeholder-val="{{ false }}">
@@ -318,9 +322,9 @@ const TAGS = {
 
 const DIRECTIONS = {
   child: [
-    { key: 'midnight', title: 'Midnight Magic', blurb: 'Ink-dark pages, stars, and a story that ends in sleep.' },
-    { key: 'scrapbook', title: 'Scrapbook', blurb: 'Cut paper, tape and stamps, as if they made it themselves.' },
-    { key: 'toybox', title: 'Toybox', blurb: 'Loud, primary and full of things that move.' },
+    { key: 'golden', title: 'Golden Hour', blurb: 'Warm low sun, long shadows, meadows and village lanes.' },
+    { key: 'moonlit', title: 'Moonlit', blurb: 'Blue night, lanterns and stars. Quiet and dreamlike.' },
+    { key: 'kingdom', title: 'Storybook Kingdom', blurb: 'Castle stone, banners, candlelit halls, bright daylight outside.' },
   ],
   couple: [
     { key: 'velvet', title: 'Midnight Velvet', blurb: 'Deep, quiet pages. Very few words per page.' },
@@ -337,7 +341,7 @@ const DIRECTIONS = {
 class Component extends DCLogic {
   state = {
     audience: 'child', step: 1, direction: 0, titleIdx: 0, tags: [],
-    dedication: '', photo: null, photoConsent: false, photoError: '', detailErrors: {},
+    dedication: '', photo: null, photoConsent: false, photoError: '', saveError: '', detailErrors: {},
     data: { child: {}, couple: {}, family: {} },
   };
 
@@ -374,7 +378,15 @@ class Component extends DCLogic {
 
   save() {
     try {
+      // Merge over what is already stored. Preview and Checkout write
+      // generated fields (pages, scenes, scenesToken, cover, plates, edits)
+      // into the same key; rewriting from scratch here threw them away on
+      // any visit back to this page and re-billed the story and the art.
+      // Only fields this page owns are overwritten.
+      let prev = {};
+      try { prev = JSON.parse(localStorage.getItem('farsh.book') || '{}') || {}; } catch (e) {}
       localStorage.setItem('farsh.book', JSON.stringify({
+        ...prev,
         audience: this.state.audience, direction: this.state.direction,
         // The index alone is meaningless to whoever ends up making the book
         // (it lands in the order email), so carry the name it stands for.
@@ -382,14 +394,19 @@ class Component extends DCLogic {
           ? DIRECTIONS[this.state.audience][this.state.direction].title : '',
         title: this.titleOptions()[Math.min(this.state.titleIdx, 2)],
         names: this.names(), tags: this.state.tags, dedication: this.state.dedication,
-        photo: this.state.audience === 'family' ? null : this.state.photo,
-        photoConsent: this.state.audience === 'family' ? false : this.state.photoConsent,
+        photo: this.state.photo,
+        photoConsent: this.state.photoConsent,
         data: this.state.data[this.state.audience] || {},
         // Extra key, read only by this page — Preview and Checkout pick the
         // fields they need by name and ignore it.
         step: this.state.step,
       }));
-    } catch (e) {}
+      if (this.state.saveError) this.setState({ saveError: '' });
+    } catch (e) {
+      // A photo that does not persist (private mode, quota) means Preview
+      // and Checkout will find no photo and refuse the book. Say so.
+      if (!this.state.saveError) this.setState({ saveError: 'Your browser is not saving this book (private window or storage full). The photo will be lost when you leave this page.' });
+    }
   }
 
   /**
@@ -553,6 +570,18 @@ class Component extends DCLogic {
         this.setState({ detailErrors: errors });
         const first = document.querySelector(`[data-field="${Object.keys(errors)[0]}"]`);
         if (first) { first.focus(); first.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
+        return;
+      }
+      // The whole book is photographed from this one picture, so a book
+      // without it is not a book. Consent is checked here too: the file
+      // input is disabled until the box is ticked, but a restored book can
+      // carry a photo from before the consent text changed.
+      if (!this.state.photo || this.state.photoConsent !== true) {
+        this.setState({ photoError: this.state.photo
+          ? 'Please tick the consent box so we can make the pictures.'
+          : 'We need one clear photo of their face to make the book.' });
+        const el = document.querySelector('[data-photo-section]');
+        if (el) el.scrollIntoView({ block: 'center', behavior: 'smooth' });
         return;
       }
     }
@@ -750,6 +779,7 @@ class Component extends DCLogic {
         backgroundImage: this.state.photo ? 'url(' + this.state.photo + ')' : 'none',
       },
       photoError: this.state.photoError,
+      saveError: this.state.saveError,
       onPhotoConsent: (e) => this.setState({ photoConsent: e.target.checked }),
       onPhotoPick: async (e) => {
         const f = e.target.files && e.target.files[0];
