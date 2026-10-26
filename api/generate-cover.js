@@ -47,7 +47,6 @@ async function handler(req, res) {
 };
 
 module.exports = handler;
-// Eleven Gemini calls at concurrency 3 with a 60s abort each can legitimately
-// run a couple of minutes; without this Vercel would cut the function off at
-// its default and the customer would see a silent "no plates".
+// One Gemini call, but it shares the 300s budget with the plates route so a
+// slow retry is not cut off.
 module.exports.config = { maxDuration: 300 };
