@@ -66,6 +66,7 @@ test('plates: PAGE_COUNT slots, photo first, each scene clamped into its own pro
   const r = await generatePlates({ ...child, scenes }, { fetchFn, saveFn: fakeSave });
   assert.strictEqual(r.plateUrls.length, PAGE_COUNT);
   assert.ok(r.plateUrls.every((u) => u && u.startsWith('/uploads/generated/plate-')));
+  r.plateUrls.forEach((u, i) => assert.match(u, new RegExp('plate-' + i + '-')));
   assert.strictEqual(fetchFn.seen.length, PAGE_COUNT);
   for (let i = 0; i < PAGE_COUNT; i++) {
     assert.ok(fetchFn.seen[i].contents[0].parts[0].inline_data, 'photo first on plate ' + i);
@@ -83,15 +84,17 @@ test('plates without a photo are all null and make no calls', async () => {
 });
 
 test('a failed slot is null, the others still succeed', async () => {
-  let call = 0;
-  const fetchFn = async () => {
-    call++;
-    if (call === 3) return { ok: false, status: 500, json: async () => ({}) };
+  // Fail every attempt (including the retry) for scene 4 only.
+  const fetchFn = async (url, opts) => {
+    if (JSON.parse(opts.body).contents[0].parts.at(-1).text.includes('scene 4')) {
+      return { ok: false, status: 500, json: async () => ({}) };
+    }
     return { ok: true, status: 200, json: async () => okBody() };
   };
   const r = await generatePlates({ ...child, scenes }, { fetchFn, saveFn: fakeSave });
   assert.strictEqual(r.plateUrls.length, PAGE_COUNT);
-  assert.ok(r.plateUrls.filter(Boolean).length >= PAGE_COUNT - 1);
+  assert.strictEqual(r.plateUrls[4], null);
+  r.plateUrls.forEach((u, i) => { if (i !== 4) assert.ok(u, 'slot ' + i); });
 });
 
 test('no more than `concurrency` image calls are in flight at once', async () => {
@@ -146,6 +149,7 @@ test('the cover is attached as a second reference only when it is our own URL', 
 test('isOwnImageUrl accepts local generated paths and the Blob host, nothing else', () => {
   assert.strictEqual(isOwnImageUrl('/uploads/generated/cover-1.png'), true);
   assert.strictEqual(isOwnImageUrl('https://x.public.blob.vercel-storage.com/farsh-art/a.png'), true);
+  assert.strictEqual(isOwnImageUrl('http://x.public.blob.vercel-storage.com/a.png'), false);
   assert.strictEqual(isOwnImageUrl('/../.env'), false);
   assert.strictEqual(isOwnImageUrl('/package.json'), false);
   assert.strictEqual(isOwnImageUrl('https://evil.example.com/a.png'), false);
@@ -163,4 +167,14 @@ test('a throwing saveFn degrades that slot to null, never throws', async () => {
   const throwingSave = async () => { throw new Error('blob upload failed'); };
   const r = await generateCoverArt(child, { fetchFn: okFetch(), saveFn: throwingSave });
   assert.strictEqual(r.coverUrl, null);
+});
+
+test('a malformed book never throws and still yields PAGE_COUNT slots', async () => {
+  const bad = Array.from({ length: PAGE_COUNT }, (_, i) => (i % 2 ? 42 : null));
+  const r = await generatePlates({ ...child, data: null, scenes: bad }, { fetchFn: okFetch(), saveFn: fakeSave });
+  assert.strictEqual(r.plateUrls.length, PAGE_COUNT);
+  const c = await generateCoverArt({ ...child, data: null }, { fetchFn: okFetch(), saveFn: fakeSave });
+  assert.ok('coverUrl' in c);
+  const p = await redrawPlate({ ...child, data: null, scenes: bad }, 1, { fetchFn: okFetch(), saveFn: fakeSave });
+  assert.ok('plateUrl' in p);
 });
