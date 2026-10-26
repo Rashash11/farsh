@@ -4,6 +4,7 @@ const { verifyScenes } = require('../lib/scenesToken');
 const { checkRateLimit } = require('../lib/rateLimit');
 const { clientIp } = require('../lib/clientIp');
 const { isAllowedAudience } = require('../lib/audiences');
+const { PAGE_COUNT } = require('../lib/pageCount');
 
 module.exports = async (req, res) => {
   if (req.method !== 'POST') {
@@ -11,7 +12,7 @@ module.exports = async (req, res) => {
     return;
   }
   const ip = clientIp(req);
-  const limited = checkRateLimit(ip, 'art');
+  const limited = checkRateLimit(ip, 'art', PAGE_COUNT);
   if (limited) {
     res.setHeader('Retry-After', String(limited.retryAfterSeconds));
     res.status(limited.status).json({ error: limited.error, message: limited.message });

@@ -1,7 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert');
 const { clientIp } = require('../lib/clientIp');
-const { checkRateLimit } = require('../lib/rateLimit');
+const { checkRateLimit, BUCKETS } = require('../lib/rateLimit');
 
 const PROXIED = { VERCEL: '1' };
 const req = (headers, remoteAddress = '203.0.113.7') => ({ headers, socket: { remoteAddress } });
@@ -58,8 +58,10 @@ test('regression: rotating x-forwarded-for no longer buys a fresh allowance', ()
   assert.strictEqual(seen.size, 1, 'all eight requests must resolve to one identity');
 
   const ip = [...seen][0];
-  for (let i = 0; i < 5; i++) assert.strictEqual(checkRateLimit(ip, 'art'), null);
-  assert.strictEqual(checkRateLimit(ip, 'art'), null); // art allows 6
-  const limited = checkRateLimit(ip, 'art');
-  assert.ok(limited && limited.status === 429, 'the 7th request must be rate limited');
+  // Spend the whole art allowance under the one identity, then one more.
+  // Read from BUCKETS so this keeps proving the point if the cap changes.
+  const cap = BUCKETS.art.perIpMax;
+  for (let i = 0; i < cap; i++) assert.strictEqual(checkRateLimit(ip, 'art', 1), null);
+  const limited = checkRateLimit(ip, 'art', 1);
+  assert.ok(limited && limited.status === 429, `the ${cap + 1}th request must be rate limited`);
 });
