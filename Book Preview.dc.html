@@ -279,8 +279,9 @@ class Component extends DCLogic {
     this.setState({ audience, book, edits: (book && book.edits) || {} });
     this.bindAll();
     this.setupCursor();
-    if (book) this.maybeGenerate(book);
-    if (book) this.maybeGenerateArt(book);
+    // The cover needs the story's signed token (see lib/scenesToken.js), so
+    // the story is written first and the cover is taken after it.
+    if (book) this.maybeGenerate(book).then(() => this.maybeGenerateArt(this.state.book));
     // Page-flip book (adapted from Hank-D-Tank/x-book)
     if (window.gsap && window.CustomEase && !this.easeReady) {
       gsap.registerPlugin(CustomEase);
@@ -406,8 +407,8 @@ class Component extends DCLogic {
 
   maybeGenerate(book) {
     const fp = this.fingerprint(book);
-    if (book.pages && book.pagesFor === fp) return;
-    this.generate(book, fp);
+    if (book.pages && book.pagesFor === fp) return Promise.resolve();
+    return this.generate(book, fp);
   }
 
   async generate(book, fp) {
@@ -456,6 +457,9 @@ class Component extends DCLogic {
   }
 
   maybeGenerateArt(book) {
+    // No signed story (the writer failed, or no secret is set): the art
+    // routes would refuse it, so keep the typeset cover and spend nothing.
+    if (!book || !book.scenesToken) return;
     const fp = this.artFingerprint(book);
     if (book.artFor === fp) {
       // Already tried for these exact inputs. If it failed last time
@@ -477,9 +481,22 @@ class Component extends DCLogic {
     try {
       const res = await fetch('/api/generate-cover', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ book }),
+        body: JSON.stringify({ book, scenesToken: book.scenesToken || null }),
       });
       const json = await res.json().catch(() => ({}));
+      if (json.error === 'invalid_scenes' && !this.restoryTried) {
+        // The saved story's token is stale (signed under an older shape or
+        // another secret). Treat it like a stale story: write it again once,
+        // then take the cover from the fresh token. Once per page load, so a
+        // server that cannot sign at all never loops.
+        this.restoryTried = true;
+        this.setState({ paintingCover: false });
+        const stale = this.patchBook({ pagesFor: null });
+        await this.generate(stale, this.fingerprint(stale));
+        const fresh = this.state.book;
+        if (fresh && fresh.pagesFor && fresh.scenesToken) await this.generateArt(fresh, this.artFingerprint(fresh));
+        return;
+      }
       if (!res.ok) throw new Error(json.message || 'paint failed');
       // A response that completed — even one whose art generation failed
       // server-side (coverUrl null) — must still mark artFor so a repeat

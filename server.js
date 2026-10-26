@@ -18,7 +18,7 @@ const { generateCoverArt, generatePlates, redrawPlate } = require('./lib/generat
 const { checkRateLimit } = require('./lib/rateLimit');
 const { clientIp } = require('./lib/clientIp');
 const { isAllowedAudience } = require('./lib/audiences');
-const { signScenes, verifyScenes } = require('./lib/scenesToken');
+const { signScenes, tokenFieldsFor, adoptSignedStory } = require('./lib/scenesToken');
 const { PAGE_COUNT } = require('./lib/pageCount');
 const { placeOrder } = require('./lib/placeOrder');
 const { verify: verifyOrderToken } = require('./lib/orderToken');
@@ -51,31 +51,38 @@ app.get('/', (req, res) => res.redirect('/Landing Page.dc.html'));
 // payloads) is what the smaller app-wide limit below is meant to protect.
 const artJson = express.json({ limit: '8mb' });
 
-// `needsScenes` routes illustrate scene lines; those lines must be the
-// ones /api/generate-book signed (see lib/scenesToken.js), never the
-// client's own text.
-function artRoute(handler, { needsScenes = false, weight = 1 } = {}) {
+// Every art route draws the child's face into a story, so every one of them
+// needs the token /api/generate-book signed (see lib/scenesToken.js): the
+// scenes, looks, age, title and direction the image model sees are the
+// signed ones, never the client's own text. The face itself goes to Google,
+// so the parent's consent is checked here too, not only at order time.
+//
+// `weight` is how many images the route may spend (see lib/rateLimit.js).
+// The api/*.js twins carry the same checks inline.
+function artRoute(handler, { weight = 1 } = {}) {
   return async (req, res) => {
     const limited = checkRateLimit(clientIp(req), 'art', weight);
     if (limited) {
       res.set('Retry-After', String(limited.retryAfterSeconds));
       return res.status(limited.status).json({ error: limited.error, message: limited.message });
     }
-    const book = req.body && typeof req.body === 'object' ? req.body.book || req.body : {};
+    const body = req.body && typeof req.body === 'object' ? req.body : {};
+    const book = body.book && typeof body.book === 'object' ? body.book : body;
     if (!isAllowedAudience(book.audience)) {
       return res.status(400).json({ error: 'unsupported_audience', message: 'We only make children\'s books right now.' });
     }
-    if (needsScenes) {
-      try {
-        book.scenes = verifyScenes(req.body.scenesToken);
-      } catch (err) {
-        console.error('[art] scenes refused:', err.message);
-        if (err.code === 'not_configured') console.error('  -> set ORDER_CONFIRM_SECRET in .env; plates cannot be illustrated without it.');
-        return res.status(400).json({ error: 'invalid_scenes', message: 'Please write the story again before illustrating it.' });
-      }
+    if (book.photoConsent !== true) {
+      return res.status(400).json({ error: 'consent_required', message: 'Please confirm the photo consent first.' });
     }
     try {
-      res.json(await handler(book, req.body));
+      adoptSignedStory(book, body.scenesToken);
+    } catch (err) {
+      console.error('[art] story refused:', err.message);
+      if (err.code === 'not_configured') console.error('  -> set ORDER_CONFIRM_SECRET in .env; nothing can be illustrated without it.');
+      return res.status(400).json({ error: 'invalid_scenes', message: 'Please write the story again before illustrating it.' });
+    }
+    try {
+      res.json(await handler(book, body));
     } catch (err) {
       console.error('[art] failed:', err.message);
       res.status(502).json({ error: 'art_failed', message: 'Could not paint right now.' });
@@ -111,8 +118,8 @@ app.post('/api/place-order', artJson, async (req, res) => {
 });
 
 app.post('/api/generate-cover', artJson, artRoute((book) => generateCoverArt(book)));
-app.post('/api/generate-plates', artJson, artRoute((book) => generatePlates(book), { needsScenes: true, weight: PAGE_COUNT }));
-app.post('/api/redraw-page', artJson, artRoute((book, body) => redrawPlate(book, body.pageIndex), { needsScenes: true }));
+app.post('/api/generate-plates', artJson, artRoute((book) => generatePlates(book), { weight: PAGE_COUNT }));
+app.post('/api/redraw-page', artJson, artRoute((book, body) => redrawPlate(book, body.pageIndex)));
 
 // Everything else — in particular /api/generate-book — gets the smaller,
 // app-wide body limit. The client strips art fields (photo, photoConsent,
@@ -139,11 +146,12 @@ app.post('/api/generate-book', async (req, res) => {
     const { pages, scenes } = await generateBookPages(book, process.env.ANTHROPIC_API_KEY);
     let scenesToken = null;
     try {
-      scenesToken = signScenes(scenes);
+      // Signed as clamped, so the token holds exactly what the prompt sees.
+      scenesToken = signScenes(tokenFieldsFor(book, scenes));
     } catch (err) {
       // The story still works without it; only illustrating does not.
-      console.error('[generate-book] could not sign scenes:', err.message);
-      console.error('  -> set ORDER_CONFIRM_SECRET in .env, or plates cannot be illustrated.');
+      console.error('[generate-book] could not sign the story:', err.message);
+      if (err.code === 'not_configured') console.error('  -> set ORDER_CONFIRM_SECRET in .env, or nothing can be illustrated.');
     }
     res.json({ pages, scenes, scenesToken });
   } catch (err) {
@@ -211,7 +219,9 @@ app.post('/api/order-confirm', orderConfirmForm, async (req, res) => {
 // Static files last, so /api/* above always wins over any same-named file.
 app.use(express.static(path.join(__dirname), { extensions: ['html'] }));
 
-app.listen(PORT, () => {
+// Listen only when run directly (`npm start`), so a test can require this
+// file for artRoute without opening a port.
+if (require.main === module) app.listen(PORT, () => {
   console.log(`farsh! running at http://localhost:${PORT}`);
   if (!process.env.ANTHROPIC_API_KEY) {
     console.log('  (no ANTHROPIC_API_KEY set — book generation will fall back to sample text)');
@@ -220,3 +230,5 @@ app.listen(PORT, () => {
     console.log('  (no RESEND_API_KEY / ORDER_EMAIL_TO — placing an order will FAIL loudly rather than lose it)');
   }
 });
+
+module.exports = { app, artRoute };

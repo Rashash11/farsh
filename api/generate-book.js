@@ -3,7 +3,7 @@
 // can't tell which one it's talking to. server.js remains the local dev path.
 
 const { generateBookPages } = require('../lib/generateBook');
-const { signScenes } = require('../lib/scenesToken');
+const { signScenes, tokenFieldsFor } = require('../lib/scenesToken');
 const { checkRateLimit } = require('../lib/rateLimit');
 const { clientIp } = require('../lib/clientIp');
 const { isAllowedAudience } = require('../lib/audiences');
@@ -32,10 +32,11 @@ module.exports = async (req, res) => {
     const { pages, scenes } = await generateBookPages(book, process.env.ANTHROPIC_API_KEY);
     let scenesToken = null;
     try {
-      scenesToken = signScenes(scenes);
+      // Signed as clamped, so the token holds exactly what the prompt sees.
+      scenesToken = signScenes(tokenFieldsFor(book, scenes));
     } catch (err) {
-      console.error('[generate-book] could not sign scenes:', err.message);
-      console.error('  -> set ORDER_CONFIRM_SECRET on this deployment, or plates cannot be illustrated.');
+      console.error('[generate-book] could not sign the story:', err.message);
+      if (err.code === 'not_configured') console.error('  -> set ORDER_CONFIRM_SECRET on this deployment, or nothing can be illustrated.');
     }
     res.status(200).json({ pages, scenes, scenesToken });
   } catch (err) {

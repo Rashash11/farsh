@@ -1,5 +1,6 @@
 // Vercel serverless twin of /api/generate-cover in server.js.
 const { generateCoverArt } = require('../lib/generateArt');
+const { adoptSignedStory } = require('../lib/scenesToken');
 const { checkRateLimit } = require('../lib/rateLimit');
 const { clientIp } = require('../lib/clientIp');
 const { isAllowedAudience } = require('../lib/audiences');
@@ -17,9 +18,24 @@ async function handler(req, res) {
     return;
   }
   const body = req.body && typeof req.body === 'object' ? req.body : {};
-  const book = body.book || body;
+  const book = body.book && typeof body.book === 'object' ? body.book : body;
   if (!isAllowedAudience(book.audience)) {
     res.status(400).json({ error: 'unsupported_audience', message: 'We only make children\'s books right now.' });
+    return;
+  }
+  // Same checks as artRoute in server.js: the face goes to Google, so consent
+  // first; then only a story /api/generate-book signed is ever illustrated,
+  // with the signed fields overwriting whatever the client sent.
+  if (book.photoConsent !== true) {
+    res.status(400).json({ error: 'consent_required', message: 'Please confirm the photo consent first.' });
+    return;
+  }
+  try {
+    adoptSignedStory(book, body.scenesToken);
+  } catch (err) {
+    console.error('[art] story refused:', err.message);
+    if (err.code === 'not_configured') console.error('  -> set ORDER_CONFIRM_SECRET on this deployment; nothing can be illustrated without it.');
+    res.status(400).json({ error: 'invalid_scenes', message: 'Please write the story again before illustrating it.' });
     return;
   }
   try {
