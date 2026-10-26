@@ -150,10 +150,10 @@
   <div style="background:var(--color-text);color:var(--color-bg);overflow:hidden;padding:13px 0;border-bottom:2px solid var(--color-divider);">
     <div style="display:flex;width:200%;animation:marquee 32s linear infinite;">
       <div style="display:flex;flex-shrink:0;width:50%;justify-content:space-around;font-family:var(--font-heading);font-weight:800;font-size:12px;letter-spacing:0.16em;text-transform:uppercase;white-space:nowrap;">
-        <span>Their name on the spine</span><span style="color:var(--color-accent-400);">32 illustrated pages</span><span>Read it before it prints</span><span style="color:var(--color-accent-400);">Sewn and cased by hand</span>
+        <span>Their name on the spine</span><span style="color:var(--color-accent-400);">12 photographed pages</span><span>Read it before it prints</span><span style="color:var(--color-accent-400);">Sewn and cased by hand</span>
       </div>
       <div style="display:flex;flex-shrink:0;width:50%;justify-content:space-around;font-family:var(--font-heading);font-weight:800;font-size:12px;letter-spacing:0.16em;text-transform:uppercase;white-space:nowrap;">
-        <span>Their name on the spine</span><span style="color:var(--color-accent-400);">32 illustrated pages</span><span>Read it before it prints</span><span style="color:var(--color-accent-400);">Sewn and cased by hand</span>
+        <span>Their name on the spine</span><span style="color:var(--color-accent-400);">12 photographed pages</span><span>Read it before it prints</span><span style="color:var(--color-accent-400);">Sewn and cased by hand</span>
       </div>
     </div>
   </div>
@@ -712,15 +712,15 @@ class Component extends DCLogic {
     const nameParam = raw ? '&name=' + encodeURIComponent(raw) : '';
 
     const childBooks = [
-      { title: 'The Great Adventure', meta: 'Ages 4–8 · 32 pages', occ: 'Birthday', kind: 'photo', img: 'uploads/covers/great-adventure.jpg', line: 'The morning ' + nameDisplay + ' found a door in the garden wall.' },
+      { title: 'The Great Adventure', meta: 'Ages 4–8 · 12 pages', occ: 'Birthday', kind: 'photo', img: 'uploads/covers/great-adventure.jpg', line: 'The morning ' + nameDisplay + ' found a door in the garden wall.' },
       { title: 'Goodnight, Little One', meta: 'Ages 0–3 · 24 pages', occ: 'Bedtime', kind: 'photo', img: 'uploads/covers/goodnight-little-one.jpg', line: 'Ten small sleepy things happen before ' + nameDisplay + ' closes their eyes.' },
       { title: "Dragon's Cave Quest", meta: 'Ages 5–9 · 40 pages', occ: 'Birthday', kind: 'photo', img: 'uploads/covers/dragons-cave-quest.jpg', line: nameDisplay + ' packs a torch, a sandwich and no fear at all.' },
       { title: 'Birthday Wish', meta: 'Ages 3–7 · 28 pages', occ: 'Birthday', kind: 'photo', img: 'uploads/covers/birthday-wish.jpg', line: nameDisplay + ' makes a wish far too big for one cake.' },
-      { title: 'Under the Sea', meta: 'Ages 4–8 · 32 pages', occ: 'Bedtime', kind: 'photo', img: 'uploads/covers/under-the-sea.jpg', line: nameDisplay + ' learns to breathe underwater on an ordinary Tuesday.' },
+      { title: 'Under the Sea', meta: 'Ages 4–8 · 12 pages', occ: 'Bedtime', kind: 'photo', img: 'uploads/covers/under-the-sea.jpg', line: nameDisplay + ' learns to breathe underwater on an ordinary Tuesday.' },
       { title: 'The Night You Arrived', meta: 'Ages 0–3 · 24 pages', occ: 'New sibling', kind: 'photo', img: 'uploads/covers/the-night-you-arrived.jpg', line: 'Everything that happened on the night ' + nameDisplay + ' came home.' },
       { title: 'Hello From Me', meta: 'Ages 2–6 · 28 pages', occ: 'New sibling', kind: 'photo', img: 'uploads/covers/hello-from-me.jpg', line: nameDisplay + ' has a job now: showing someone the whole world.' },
       { title: 'First Day, Big Day', meta: 'Ages 4–7 · 28 pages', occ: 'Big first days', kind: 'photo', img: 'uploads/covers/first-day-big-day.jpg', line: 'New shoes, new door, new names to learn. ' + nameDisplay + ' is ready.' },
-      { title: 'Brave in a Big School', meta: 'Ages 5–8 · 32 pages', occ: 'Big first days', kind: 'photo', img: 'uploads/covers/brave-in-a-big-school.jpg', line: nameDisplay + ' finds the one friend who makes a big place small.' },
+      { title: 'Brave in a Big School', meta: 'Ages 5–8 · 12 pages', occ: 'Big first days', kind: 'photo', img: 'uploads/covers/brave-in-a-big-school.jpg', line: nameDisplay + ' finds the one friend who makes a big place small.' },
     ];
 
 
@@ -742,7 +742,7 @@ class Component extends DCLogic {
     const faqData = [
       { q: 'Do I see the book before it prints?', a: 'Yes — the full manuscript and every illustration, in a preview you can read end to end. Change any line, any picture, any dedication, as many times as you need. Nothing goes to print until you approve it.' },
       { q: 'How does the writing actually work?', a: 'You steer it: the details you give us set the character, the setting and the ending. Our writing tool drafts from those details, then an editor reads the whole book before it reaches you.' },
-      { q: 'Can it look like my child?', a: 'Send one clear photograph and the illustrations follow their hair, skin tone and glasses. Skip the photograph and describe them instead — that works just as well.' },
+      { q: 'Can it look like my child?', a: 'Yes — that is the whole point. Send one clear photograph, face to the camera in good light, and every page is photographed from it: their face, their hair, their glasses. A photo is required; we cannot make the book without one.' },
       { q: 'How long does it take to arrive?', a: 'Most orders are printed, bound and posted within five days. The hand-bound cloth edition takes about a week longer because it is sewn and cased by hand.' },
       { q: 'What if something is wrong when it arrives?', a: 'Write to us with a photograph and we reprint it. A book with a misspelled name is not a book we will charge you for.' },
     ];
