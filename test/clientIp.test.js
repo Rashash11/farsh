@@ -63,5 +63,5 @@ test('regression: rotating x-forwarded-for no longer buys a fresh allowance', ()
   const cap = BUCKETS.art.perIpMax;
   for (let i = 0; i < cap; i++) assert.strictEqual(checkRateLimit(ip, 'art', 1), null);
   const limited = checkRateLimit(ip, 'art', 1);
-  assert.ok(limited && limited.status === 429, `the ${cap + 1}th request must be rate limited`);
+  assert.ok(limited && limited.status === 429, `request number ${cap + 1} must be rate limited`);
 });
