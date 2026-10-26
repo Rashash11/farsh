@@ -1,9 +1,8 @@
 const test = require('node:test');
 const assert = require('node:assert');
 const {
-  STYLE_BLOCKS, CONSTRAINTS,
-  characterSheetPrompt, photoSheetPrompt, platePrompt, coverPrompt,
-  artFingerprint,
+  STYLE_BLOCKS, CONSTRAINTS, IDENTITY, MOODS,
+  platePrompt, coverPrompt, artFingerprint,
 } = require('../lib/artPrompts');
 
 const child = {
@@ -17,39 +16,59 @@ test('every audience/direction has a style block', () => {
   }
 });
 
-test('all prompts end with the constraints block', () => {
-  for (const p of [characterSheetPrompt(child), photoSheetPrompt(child),
-                   platePrompt(child, 'the child opens a green door'), coverPrompt(child)]) {
-    assert.ok(p.trim().endsWith(CONSTRAINTS), p.slice(-120));
-  }
+test('the sheet prompts are gone', () => {
+  const mod = require('../lib/artPrompts');
+  assert.strictEqual(mod.characterSheetPrompt, undefined);
+  assert.strictEqual(mod.photoSheetPrompt, undefined);
 });
 
-test('character sheet includes looks and age, never the name', () => {
-  const p = characterSheetPrompt(child);
+test('child styles are photorealistic, never painted', () => {
+  for (const d of [0, 1, 2]) {
+    assert.match(STYLE_BLOCKS.child[d], /photoreal/i);
+    assert.doesNotMatch(STYLE_BLOCKS.child[d], /gouache|painted|brushwork/i);
+  }
+  assert.match(CONSTRAINTS, /photoreal/i);
+  assert.doesNotMatch(CONSTRAINTS, /never photorealistic/i);
+  assert.match(CONSTRAINTS, /no text/i);
+  assert.match(CONSTRAINTS, /cartoon|anime/i);
+});
+
+test('cover and plate prompts carry the identity block and end with the constraints', () => {
+  for (const p of [platePrompt(child, 'the child opens a green door'), coverPrompt(child)]) {
+    assert.ok(p.includes(IDENTITY), 'identity block missing');
+    assert.ok(p.trim().endsWith(CONSTRAINTS), p.slice(-120));
+    assert.match(p, /attached photograph/i);
+  }
+  assert.match(IDENTITY, /never age/i);
+  assert.match(IDENTITY, /identity wins|identity must win/i);
+});
+
+test('plate prompt is square and leaves room for text; cover is portrait with calm top third', () => {
+  assert.match(platePrompt(child, 'a'), /1:1/);
+  assert.match(platePrompt(child, 'a'), /negative space|room for text/i);
+  assert.match(coverPrompt(child), /3:4/);
+  assert.match(coverPrompt(child), /top third/i);
+});
+
+test('prompts include looks and age, never the name', () => {
+  const p = platePrompt(child, 'the child climbs a wall');
   assert.match(p, /curly dark hair/);
   assert.match(p, /7-year-old/);
-  assert.ok(!p.includes('Nova')); // names are typeset, not painted
+  assert.ok(!p.includes('Nova'));
 });
 
-test('plate prompt includes the scene and reference-sheet instruction', () => {
-  const p = platePrompt(child, 'the child opens a green door');
-  assert.match(p, /green door/);
-  assert.match(p, /reference sheet/i);
-  assert.match(p, /4:3/);
+test('every user field that reaches the image model is bounded', () => {
+  const big = 'x'.repeat(5000);
+  const book = { ...child, title: big, data: { name: 'N', age: big, looks: big } };
+  const plate = platePrompt(book, big);
+  const cover = coverPrompt(book);
+  assert.ok(plate.length < 2500, 'plate prompt is ' + plate.length);
+  assert.ok(cover.length < 2500, 'cover prompt is ' + cover.length);
+  assert.ok(!plate.includes('\n' + 'x'.repeat(400)), 'scene not clamped');
 });
 
-test('cover prompt is portrait with calm top third', () => {
-  const p = coverPrompt(child);
-  assert.match(p, /3:4/);
-  assert.match(p, /top third/i);
-});
-
-test('photoSheetPrompt for a couple mentions both/two people and still ends with CONSTRAINTS', () => {
-  const couple = { audience: 'couple', direction: 0, data: { met: 'at a bus stop' } };
-  const p = photoSheetPrompt(couple);
-  assert.match(p, /\btwo\b/i);
-  assert.match(p, /people|characters/i);
-  assert.ok(p.trim().endsWith(CONSTRAINTS), p.slice(-120));
+test('MOODS lists three child directions', () => {
+  assert.deepStrictEqual(MOODS.map((m) => m.key), ['golden', 'moonlit', 'kingdom']);
 });
 
 test('artFingerprint ignores name, changes with looks/direction/photo', () => {
