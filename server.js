@@ -17,7 +17,11 @@ const { generateBookPages } = require('./lib/generateBook');
 const { generateCoverArt, generatePlates, redrawPlate } = require('./lib/generateArt');
 const { checkRateLimit } = require('./lib/rateLimit');
 const { clientIp } = require('./lib/clientIp');
+const { isAllowedAudience } = require('./lib/audiences');
 const { placeOrder } = require('./lib/placeOrder');
+const { verify: verifyOrderToken } = require('./lib/orderToken');
+const { sendPaymentDecision } = require('./lib/confirmPayment');
+const { renderReviewPage, renderResultPage, renderErrorPage } = require('./lib/orderConfirmPage');
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -53,8 +57,8 @@ function artRoute(handler) {
       return res.status(limited.status).json({ error: limited.error, message: limited.message });
     }
     const book = req.body && typeof req.body === 'object' ? req.body.book || req.body : {};
-    if (!book.audience) {
-      return res.status(400).json({ error: 'missing_audience', message: 'Request body must include "book.audience".' });
+    if (!isAllowedAudience(book.audience)) {
+      return res.status(400).json({ error: 'unsupported_audience', message: 'We only make children\'s books right now.' });
     }
     try {
       res.json(await handler(book, req.body));
@@ -111,8 +115,8 @@ app.post('/api/generate-book', async (req, res) => {
   }
 
   const book = req.body && typeof req.body === 'object' ? req.body : {};
-  if (!book.audience) {
-    return res.status(400).json({ error: 'missing_audience', message: 'Request body must include "audience".' });
+  if (!isAllowedAudience(book.audience)) {
+    return res.status(400).json({ error: 'unsupported_audience', message: 'We only make children\'s books right now.' });
   }
 
   try {
@@ -143,6 +147,42 @@ app.post('/api/generate-book', async (req, res) => {
       error: 'generation_failed',
       message: 'We could not write the book just now.',
     });
+  }
+});
+
+// The order email's "Review & confirm" link. GET only renders (no side
+// effects, so an email client or security scanner prefetching the link
+// can't confirm/reject anything by itself); the actual decision happens on
+// POST, from a click on one of the two buttons that page renders. Its own
+// small urlencoded parser — scoped to this route only, not app-wide — so it
+// has no bearing on the JSON body-limit ordering documented above.
+const orderConfirmForm = express.urlencoded({ extended: false, limit: '8kb' });
+
+app.get('/api/order-confirm', (req, res) => {
+  try {
+    const summary = verifyOrderToken(req.query.token);
+    res.set('Content-Type', 'text/html').send(renderReviewPage(summary, req.query.token));
+  } catch (err) {
+    console.error('[order-confirm] view rejected:', err.message);
+    res.status(400).set('Content-Type', 'text/html').send(renderErrorPage('This link is invalid or no longer usable.'));
+  }
+});
+
+app.post('/api/order-confirm', orderConfirmForm, async (req, res) => {
+  const { token, action } = req.body || {};
+  try {
+    const result = await sendPaymentDecision(token, action);
+    res.set('Content-Type', 'text/html').send(renderResultPage(result));
+  } catch (err) {
+    console.error('[order-confirm] action failed:', err.message);
+    if (err.code === 'not_configured') console.error('  -> set ORDER_CONFIRM_SECRET in .env.');
+    const status = err.code === 'invalid_action' || err.code === 'invalid_token' ? 400 : 502;
+    const message = err.code === 'invalid_token'
+      ? 'This link is invalid or no longer usable.'
+      : err.code === 'invalid_action'
+        ? 'Unknown action.'
+        : 'Could not email the customer just now — try again in a moment.';
+    res.status(status).set('Content-Type', 'text/html').send(renderErrorPage(message));
   }
 });
 

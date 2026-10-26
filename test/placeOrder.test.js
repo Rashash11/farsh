@@ -2,6 +2,9 @@ const test = require('node:test');
 const assert = require('node:assert');
 const { placeOrder, validateOrder } = require('../lib/placeOrder');
 const { composeOrderEmail, sendOrderEmail, orderNumber } = require('../lib/sendOrderEmail');
+const { verify } = require('../lib/orderToken');
+
+const SECRET = 'test-secret-do-not-use-in-prod';
 
 const goodBook = () => ({
   audience: 'child', direction: 0, title: 'Layla and the door in the garden wall',
@@ -26,14 +29,28 @@ test('an unpersonalised book is refused even if the UI let it through', () => {
   assert.ok(problems.some((p) => /missing "name"/.test(p)), problems.join(' '));
 });
 
-test('a couple book needs both names', () => {
+// Farsh! sells only the child book for now. The couple and family code paths
+// still exist in lib (prompts, fields) but an order for them must be refused
+// here, whatever the UI did, so nothing nobody can fulfil gets emailed.
+test('a complete couple book is refused while only the child book is sold', () => {
   const o = goodOrder();
   o.book.audience = 'couple';
-  o.book.names = 'Noor';
-  o.book.data = { name: 'Noor' };
-  assert.ok(validateOrder(o).some((p) => /missing "partner"/.test(p)));
-  o.book.data.partner = 'Sami';
-  assert.deepStrictEqual(validateOrder(o), []);
+  o.book.names = 'Noor & Sami';
+  o.book.data = { name: 'Noor', partner: 'Sami' };
+  assert.ok(validateOrder(o).some((p) => /Unknown audience/.test(p)), validateOrder(o).join(' '));
+});
+
+test('a complete family book is refused while only the child book is sold', () => {
+  const o = goodOrder();
+  o.book.audience = 'family';
+  o.book.names = 'The Haddads';
+  o.book.data = { name: 'The Haddads' };
+  assert.ok(validateOrder(o).some((p) => /Unknown audience/.test(p)), validateOrder(o).join(' '));
+});
+
+test('the sold audiences are exported so the routes refuse the same set', () => {
+  const { ALLOWED_AUDIENCES } = require('../lib/audiences');
+  assert.deepStrictEqual(ALLOWED_AUDIENCES, ['child']);
 });
 
 test('shipping details are re-checked server side', () => {
@@ -77,6 +94,30 @@ test('empty optional fields are left out rather than printed blank', () => {
   const { text } = composeOrderEmail(o);
   assert.ok(!/Dedication:\s*$/m.test(text));
   assert.ok(!/Note on the card:\s*$/m.test(text));
+});
+
+test('an order with no payment screenshot has no PAYMENT section', () => {
+  const { text } = composeOrderEmail({ ...goodOrder(), orderNumber: 'FA-1', placedAt: 'now' });
+  assert.ok(!/PAYMENT/.test(text));
+});
+
+test('an order with a payment screenshot gets a PAYMENT section with the screenshot url and a review link', () => {
+  const o = { ...goodOrder(), orderNumber: 'FA-1234', placedAt: 'now', paymentScreenshotUrl: 'https://blob.example/FA-1234.png' };
+  const { text } = composeOrderEmail(o, { secret: SECRET, baseUrl: 'https://farsh.example' });
+  assert.match(text, /PAYMENT/);
+  assert.ok(text.includes('https://blob.example/FA-1234.png'), text);
+  const linkMatch = /https:\/\/farsh\.example\/api\/order-confirm\?token=(\S+)/.exec(text);
+  assert.ok(linkMatch, 'expected a review link in the email\n' + text);
+  const token = decodeURIComponent(linkMatch[1]);
+  const summary = verify(token, { secret: SECRET });
+  assert.strictEqual(summary.orderNumber, 'FA-1234');
+  assert.strictEqual(summary.email, 'parent@example.com');
+  assert.strictEqual(summary.total, '$60');
+});
+
+test('composing an order email for a paid screenshot without ORDER_CONFIRM_SECRET configured fails loudly, not silently omits the link', () => {
+  const o = { ...goodOrder(), orderNumber: 'FA-1', placedAt: 'now', paymentScreenshotUrl: 'https://blob.example/x.png' };
+  assert.throws(() => composeOrderEmail(o, { secret: '' }), (err) => err.code === 'not_configured');
 });
 
 test('order numbers look like FA-####', () => {
@@ -140,4 +181,39 @@ test('placeOrder refuses an invalid order before trying to send', async () => {
     (err) => err.code === 'invalid_order' && err.problems.length > 0,
   );
   assert.strictEqual(attempted, false, 'must not contact the mailer for an invalid order');
+});
+
+// --- payment screenshot --------------------------------------------------
+
+test('an order with no payment screenshot never attempts an upload', async () => {
+  let uploadAttempted = false;
+  await placeOrder(goodOrder(), {
+    send: async () => {},
+    saveScreenshot: async () => { uploadAttempted = true; return 'https://blob/should-not-happen'; },
+  });
+  assert.strictEqual(uploadAttempted, false);
+});
+
+test('an order with a payment screenshot uploads it, and the order the mailer sees carries the url', async () => {
+  const sent = [];
+  const order = { ...goodOrder(), paymentScreenshot: 'data:image/png;base64,AAAA' };
+  await placeOrder(order, {
+    send: async (o) => sent.push(o),
+    saveScreenshot: async (dataUrl, orderNum) => `https://blob.example/${orderNum}.png`,
+    orderNumber: () => 'FA-7777',
+  });
+  assert.strictEqual(sent[0].paymentScreenshotUrl, 'https://blob.example/FA-7777.png');
+});
+
+test('a failed screenshot upload fails the whole order, and no email is sent', async () => {
+  let sendAttempted = false;
+  const order = { ...goodOrder(), paymentScreenshot: 'data:image/png;base64,AAAA' };
+  await assert.rejects(
+    () => placeOrder(order, {
+      send: async () => { sendAttempted = true; },
+      saveScreenshot: async () => { throw new Error('blob_put_failed: network error'); },
+    }),
+    (err) => err.code === 'screenshot_upload_failed',
+  );
+  assert.strictEqual(sendAttempted, false, 'must not email an order whose screenshot never saved');
 });

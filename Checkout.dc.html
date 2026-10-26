@@ -167,6 +167,25 @@
             </div>
           </div>
 
+          <div style="border:2px solid var(--color-text);background:var(--color-bg);margin-bottom:16px;">
+            <div style="padding:16px 18px;border-bottom:2px solid var(--color-divider);font-size:11px;letter-spacing:0.16em;text-transform:uppercase;color:var(--color-neutral-600);">Payment · InstaPay</div>
+            <div style="padding:16px 18px;display:flex;flex-direction:column;gap:12px;">
+              <p style="font-size:13px;line-height:1.6;margin:0;">Send {{ total }} via InstaPay to <strong>{{ instapayNumber }}</strong>, then upload a screenshot of the transfer. We will check it and email you once your payment is confirmed.</p>
+              <sc-if value="{{ hasScreenshot }}" hint-placeholder-val="{{ false }}">
+                <div style="display:flex;align-items:center;gap:14px;">
+                  <div data-screenshot-thumb style="{{ screenshotThumbStyle }}"></div>
+                  <button onClick="{{ onRemoveScreenshot }}" style="border:2px solid var(--color-text);background:var(--color-bg);color:var(--color-text);font-family:var(--font-heading);font-weight:800;font-size:12px;letter-spacing:0.06em;text-transform:uppercase;padding:9px 13px;cursor:pointer;">Remove</button>
+                </div>
+              </sc-if>
+              <sc-if value="{{ noScreenshotYet }}" hint-placeholder-val="{{ true }}">
+                <input type="file" accept="image/*" onChange="{{ onScreenshotPick }}" style="font-size:13px;"/>
+              </sc-if>
+              <sc-if value="{{ screenshotError }}" hint-placeholder-val="{{ false }}">
+                <div role="alert" style="font-size:13px;line-height:1.55;color:var(--color-accent-700);font-weight:700;">{{ screenshotError }}</div>
+              </sc-if>
+            </div>
+          </div>
+
           <sc-if value="{{ noBook }}">
             <div role="status" style="border:2px solid var(--color-text);background:var(--color-bg);padding:16px 18px;margin-bottom:16px;font-size:13px;line-height:1.6;">
               {{ noBookReason }}
@@ -300,6 +319,11 @@ const THEME = {
   },
 };
 
+// Manual payment, no gateway: the only way to pay right now is an InstaPay
+// transfer to this number, verified by a screenshot and your own review
+// (see lib/confirmPayment.js).
+const INSTAPAY_NUMBER = '0103 228 8434';
+
 // Shown one at a time, rotating, while the plates are being painted --
 // same lines as Book Preview's writing-wait joke cycle.
 const JOKES = [
@@ -316,13 +340,17 @@ class Component extends DCLogic {
     audience: 'child', format: 1, speed: 'Standard · 5 days', gift: false,
     placed: false, order: '', book: null, ship: {}, errors: {}, painting: false, jokeIdx: 0, plateLimited: false,
     submitting: false, orderError: '',
+    paymentScreenshot: null, screenshotError: '',
   };
 
   componentDidMount() {
     let book = null;
     try { book = JSON.parse(localStorage.getItem('farsh.book') || 'null'); } catch (e) {}
-    const q = new URLSearchParams(location.search).get('for');
-    const audience = ['child', 'couple', 'family'].indexOf(q) > -1 ? q : ((book && book.audience) || 'child');
+    // Only the child book is sold for now (see lib/audiences.js): whatever
+    // the link or a stale saved book says, this page renders the child book,
+    // and a saved couple/family book is treated as no book at all.
+    const audience = 'child';
+    if (book && book.audience !== 'child') book = null;
     this.setState({ audience, book, format: audience === 'child' ? 1 : 0 });
     this.bindAll();
     this.setupCursor();
@@ -639,8 +667,41 @@ class Component extends DCLogic {
       total: this.money(total),
       reassurance: 'We print from the proof you approved. If a name is wrong when it arrives, we reprint it and you pay nothing.',
 
+      instapayNumber: INSTAPAY_NUMBER,
+      hasScreenshot: !!this.state.paymentScreenshot,
+      noScreenshotYet: !this.state.paymentScreenshot,
+      screenshotThumbStyle: {
+        width: '72px', height: '72px', backgroundSize: 'cover', backgroundPosition: 'center',
+        border: '2px solid var(--color-text)',
+        backgroundImage: this.state.paymentScreenshot ? 'url(' + this.state.paymentScreenshot + ')' : 'none',
+      },
+      screenshotError: this.state.screenshotError,
+      onScreenshotPick: async (e) => {
+        const f = e.target.files && e.target.files[0];
+        if (!f) return;
+        this.setState({ screenshotError: '' });
+        // Stays under the /api/place-order body limit with room for the rest
+        // of the order; base64 inflates this by about a third.
+        if (f.size > 5 * 1024 * 1024) {
+          this.setState({ screenshotError: 'That image is too large — please upload a screenshot under 5MB.' });
+          return;
+        }
+        try {
+          const dataUrl = await new Promise((ok, err) => {
+            const reader = new FileReader();
+            reader.onload = () => ok(reader.result);
+            reader.onerror = err;
+            reader.readAsDataURL(f);
+          });
+          this.setState({ paymentScreenshot: dataUrl, screenshotError: '' });
+        } catch (err) {
+          this.setState({ paymentScreenshot: null, screenshotError: 'That file could not be read — try a JPEG or PNG screenshot instead.' });
+        }
+      },
+      onRemoveScreenshot: () => this.setState({ paymentScreenshot: null, screenshotError: '' }),
+
       noBook: !this.orderableBook(),
-      placeDisabled: !this.orderableBook() || this.state.submitting,
+      placeDisabled: !this.orderableBook() || this.state.submitting || !this.state.paymentScreenshot,
       noBookReason: this.state.book
         ? 'This book does not have a name in it yet, so there is nothing to print.'
         : 'There is no book to order yet — it looks like this page was opened on its own.',
@@ -666,6 +727,7 @@ class Component extends DCLogic {
         // number. Never confirm an order for a book that does not exist.
         if (!this.orderableBook()) return;
         if (this.state.submitting) return;         // no double submit
+        if (!this.state.paymentScreenshot) return; // button is disabled for this too; belt and braces
         const errors = this.validateShip();
         if (Object.keys(errors).length) {
           this.setState({ errors });
@@ -692,6 +754,7 @@ class Component extends DCLogic {
               speed: this.state.speed,
               gift: this.state.gift,
               total: this.money(total),
+              paymentScreenshot: this.state.paymentScreenshot,
             }),
           });
           const json = await res.json().catch(() => ({}));
