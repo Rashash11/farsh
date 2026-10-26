@@ -3,13 +3,18 @@ const assert = require('node:assert');
 const { placeOrder, validateOrder } = require('../lib/placeOrder');
 const { composeOrderEmail, sendOrderEmail, orderNumber } = require('../lib/sendOrderEmail');
 const { verify } = require('../lib/orderToken');
+const { PAGE_COUNT } = require('../lib/pageCount');
 
 const SECRET = 'test-secret-do-not-use-in-prod';
 
+const PHOTO = 'data:image/jpeg;base64,/9j/AAAA';
 const goodBook = () => ({
   audience: 'child', direction: 0, title: 'Layla and the door in the garden wall',
   names: 'Layla', tags: ['Dinosaurs'], dedication: 'For Layla, from Baba',
-  photo: null, photoConsent: false, data: { name: 'Layla', age: '7', looks: 'red curly hair' },
+  photo: PHOTO, photoConsent: true, data: { name: 'Layla', age: '7', looks: 'red curly hair' },
+  pages: Array.from({ length: PAGE_COUNT }, (_, i) => `Page ${i + 1} text.`),
+  coverUrl: 'https://x.public.blob.vercel-storage.com/farsh-art/cover-1.png',
+  plateUrls: Array.from({ length: PAGE_COUNT }, (_, i) => (i === 4 ? null : `https://x.public.blob.vercel-storage.com/farsh-art/plate-${i}.png`)),
 });
 const goodShip = () => ({ who: 'Parent Name', email: 'parent@example.com', address: '12 Nile St, Cairo', note: '' });
 const goodOrder = () => ({ book: goodBook(), ship: goodShip(), format: 'Hardcover', speed: 'Rush · 3 days', gift: true, total: '$60' });
@@ -216,4 +221,36 @@ test('a failed screenshot upload fails the whole order, and no email is sent', a
     (err) => err.code === 'screenshot_upload_failed',
   );
   assert.strictEqual(sendAttempted, false, 'must not email an order whose screenshot never saved');
+});
+
+test('an order without a photo is refused', () => {
+  const o = goodOrder();
+  o.book.photo = null;
+  assert.ok(validateOrder(o).some((p) => /photo/i.test(p)));
+});
+
+test('an order whose photo consent is not exactly true is refused', () => {
+  for (const bad of [false, 'true', 1, undefined]) {
+    const o = goodOrder();
+    o.book.photoConsent = bad;
+    assert.ok(validateOrder(o).some((p) => /consent/i.test(p)), String(bad));
+  }
+});
+
+test('an order must carry exactly PAGE_COUNT pages of text', () => {
+  const o = goodOrder();
+  o.book.pages = o.book.pages.slice(0, 3);
+  assert.ok(validateOrder(o).some((p) => /pages/i.test(p)));
+  o.book.pages = undefined;
+  assert.ok(validateOrder(o).some((p) => /pages/i.test(p)));
+});
+
+test('the email carries every page, the cover, and each plate or "missing"', () => {
+  const o = { ...goodOrder(), orderNumber: 'FA-1234', placedAt: '2026-10-26T10:00:00.000Z' };
+  const { text } = composeOrderEmail(o, { secret: SECRET });
+  assert.match(text, /THE PAGES/);
+  for (let i = 1; i <= PAGE_COUNT; i++) assert.ok(text.includes(`  ${i}: Page ${i} text.`), 'page ' + i);
+  assert.match(text, /Cover: https:\/\/x\.public/);
+  assert.match(text, /Plate 5: missing/);
+  assert.match(text, /Plate 1: https:\/\/x\.public/);
 });
