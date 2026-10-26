@@ -7,6 +7,18 @@ const assert = require('node:assert');
 process.env.GEMINI_API_KEY = process.env.GEMINI_API_KEY || 'test-key';
 
 const { generateCoverArt, generatePlates, redrawPlate, isOwnImageUrl } = require('../lib/generateArt');
+
+// genImage logs every failed attempt for the operator. Many tests below fail
+// on purpose, so the log is silenced for this file and captured explicitly
+// where a test is about the log itself.
+console.error = () => {};
+async function captureErrors(fn) {
+  const lines = [];
+  const saved = console.error;
+  console.error = (...args) => lines.push(args.join(' '));
+  try { await fn(); } finally { console.error = saved; }
+  return lines;
+}
 const { PAGE_COUNT } = require('../lib/pageCount');
 
 const PNG_B64 =
@@ -215,4 +227,57 @@ test('a malformed book never throws and still yields PAGE_COUNT slots', async ()
   assert.ok('coverUrl' in c);
   const p = await redrawPlate({ ...child, data: null, scenes: bad }, 1, { fetchFn: okFetch(), saveFn: fakeSave });
   assert.ok('plateUrl' in p);
+});
+
+test('a rejected call is logged for the operator with model, status and the API message', async () => {
+  const fetchFn = async () => ({
+    ok: false, status: 400,
+    text: async () => JSON.stringify({ error: { code: 400, message: 'API key not valid. Please pass a valid API key.' } }),
+  });
+  let r;
+  const lines = await captureErrors(async () => { r = await generateCoverArt(child, { fetchFn, saveFn: fakeSave }); });
+  assert.strictEqual(r.coverUrl, null);
+  assert.strictEqual(lines.length, 2, 'one line per failed attempt: ' + lines.join(' | '));
+  for (const l of lines) {
+    assert.match(l, /^\[art\] /);
+    assert.match(l, /gemini-2\.5-flash-image/);
+    assert.match(l, /400/);
+    assert.match(l, /API key not valid/);
+    assert.ok(!/test-key/.test(l), 'the key must never be logged');
+  }
+});
+
+test('a long error body is capped in the log', async () => {
+  const fetchFn = async () => ({ ok: false, status: 500, text: async () => 'x'.repeat(5000) });
+  const lines = await captureErrors(() => generateCoverArt(child, { fetchFn, saveFn: fakeSave }));
+  assert.ok(lines.length > 0);
+  for (const l of lines) assert.ok(l.length < 400, 'line was ' + l.length + ' chars');
+});
+
+test('a refusal logs its finishReason or blockReason', async () => {
+  const finish = async () => ({ ok: true, status: 200, json: async () => ({ candidates: [{ finishReason: 'IMAGE_SAFETY', content: { parts: [] } }] }) });
+  const blocked = async () => ({ ok: true, status: 200, json: async () => ({ promptFeedback: { blockReason: 'PROHIBITED_CONTENT' } }) });
+  const a = await captureErrors(() => generateCoverArt(child, { fetchFn: finish, saveFn: fakeSave }));
+  const b = await captureErrors(() => generateCoverArt(child, { fetchFn: blocked, saveFn: fakeSave }));
+  assert.ok(a.some((l) => /\[art\].*IMAGE_SAFETY/.test(l)), a.join(' | '));
+  assert.ok(b.some((l) => /\[art\].*PROHIBITED_CONTENT/.test(l)), b.join(' | '));
+});
+
+test('a thrown or aborted call logs the error name and message', async () => {
+  const fetchFn = (url, opts) => new Promise((_, reject) => {
+    opts.signal.addEventListener('abort', () => reject(Object.assign(new Error('This operation was aborted'), { name: 'AbortError' })));
+  });
+  const lines = await captureErrors(() => generateCoverArt(child, { fetchFn, saveFn: fakeSave, timeoutMs: 10 }));
+  assert.strictEqual(lines.length, 2);
+  for (const l of lines) assert.match(l, /\[art\].*AbortError: This operation was aborted/);
+});
+
+test('a log that cannot be written never breaks the call', async () => {
+  const fetchFn = async () => ({ ok: false, status: 400, text: async () => { throw new Error('body gone'); } });
+  const saved = console.error;
+  console.error = () => { throw new Error('log sink down'); };
+  try {
+    const r = await generateCoverArt(child, { fetchFn, saveFn: fakeSave });
+    assert.strictEqual(r.coverUrl, null);
+  } finally { console.error = saved; }
 });
