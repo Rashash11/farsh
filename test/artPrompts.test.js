@@ -64,7 +64,7 @@ test('every user field that reaches the image model is bounded', () => {
   const cover = coverPrompt(book);
   assert.ok(plate.length < 2500, 'plate prompt is ' + plate.length);
   assert.ok(cover.length < 2500, 'cover prompt is ' + cover.length);
-  assert.ok(!plate.includes('\n' + 'x'.repeat(400)), 'scene not clamped');
+  assert.ok(!plate.includes('Scene: ' + 'x'.repeat(400)), 'scene not clamped');
 });
 
 test('MOODS lists three child directions', () => {
@@ -77,4 +77,14 @@ test('artFingerprint ignores name, changes with looks/direction/photo', () => {
   assert.notStrictEqual(fp, artFingerprint({ ...child, direction: 1 }));
   assert.notStrictEqual(fp, artFingerprint({ ...child, data: { ...child.data, looks: 'red hair' } }));
   assert.notStrictEqual(fp, artFingerprint({ ...child, photo: 'data:image/jpeg;base64,AAAA' }));
+});
+
+test('a numeric age still renders as N-year-old', () => {
+  const p = platePrompt({ ...child, data: { ...child.data, age: 7 } }, 'a');
+  assert.match(p, /7-year-old/);
+});
+
+test('a scene ending in a full stop or ellipsis gets no doubled punctuation', () => {
+  assert.doesNotMatch(platePrompt(child, 'the child waves.'), /\.\./);
+  assert.doesNotMatch(platePrompt(child, 'x'.repeat(5000)), /…\./);
 });
