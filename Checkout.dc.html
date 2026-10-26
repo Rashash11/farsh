@@ -215,11 +215,11 @@
             <h1 style="font-family:var(--font-heading);font-weight:800;font-size:clamp(32px,5vw,68px);line-height:0.92;letter-spacing:-0.045em;margin:0 0 20px;max-width:20ch;">{{ doneLine }}</h1>
             <p style="font-size:17px;line-height:1.6;margin:0 0 14px;max-width:46ch;opacity:0.92;">{{ doneBlurb }}</p>
             <sc-if value="{{ painting }}" hint-placeholder-val="{{ false }}">
-              <p aria-live="polite" style="font-size:14px;margin:14px 0 0;opacity:0.85;">Your illustrations are being painted — {{ paintingJoke }}</p>
+              <p aria-live="polite" style="font-size:14px;margin:14px 0 0;opacity:0.85;">Your pictures are being taken — {{ paintingJoke }}</p>
             </sc-if>
             <sc-if value="{{ plateLimited }}" hint-placeholder-val="{{ false }}">
               <p style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;font-size:14px;line-height:1.6;margin:14px 0 0;opacity:0.92;">
-                <span>The painter is busy — your illustrations will be ready soon.</span>
+                <span>The photographer is busy — your illustrations will be ready soon.</span>
                 <button onClick="{{ onRetryPlates }}" style="border:2px solid currentColor;background:transparent;color:inherit;font-family:var(--font-heading);font-weight:800;font-size:11px;letter-spacing:0.08em;text-transform:uppercase;padding:8px 12px;cursor:pointer;">Try again</button>
               </p>
             </sc-if>
@@ -324,7 +324,7 @@ const THEME = {
 // (see lib/confirmPayment.js).
 const INSTAPAY_NUMBER = '0103 228 8434';
 
-// Shown one at a time, rotating, while the plates are being painted --
+// Shown one at a time, rotating, while the plates are being photographed --
 // same lines as Book Preview's writing-wait joke cycle.
 const JOKES = [
   'Teaching the dragon to spell your name...',
@@ -450,7 +450,36 @@ class Component extends DCLogic {
     if (!names || placeholders.indexOf(names.toLowerCase()) > -1) return null;
     const data = (b.data && typeof b.data === 'object') ? b.data : {};
     if (!String(data.name || '').trim()) return null;
+    if (!(Array.isArray(b.pages) && b.pages.length > 0 && !!b.photo && b.photoConsent === true)) return null;
     return b;
+  }
+
+  // The email is the only record of the order, so it gets the book exactly
+  // as approved: generated pages with the customer's edits applied, plus the
+  // cover and whatever plates exist (nulls stay null; the owner sees
+  // "missing" and can take those pictures again).
+  orderBook() {
+    const b = this.state.book || {};
+    const edits = b.edits || {};
+    const pages = (Array.isArray(b.pages) ? b.pages : []).map((p, i) => edits['child:' + i] || p);
+    return { ...b, pages, edits: undefined, scenes: undefined, scenesToken: undefined, artFor: undefined, pagesFor: undefined, platesFor: undefined, step: undefined };
+  }
+
+  // Vercel caps a function request body at 4.5MB and the order now carries
+  // the child's photo as well as this screenshot. Re-encode to a bounded
+  // JPEG in the browser, the same way Book Builder does for the photo.
+  async downscaleScreenshot(file) {
+    const url = URL.createObjectURL(file);
+    try {
+      const img = await new Promise((ok, err) => {
+        const i = new Image(); i.onload = () => ok(i); i.onerror = err; i.src = url;
+      });
+      const max = 1600, scale = Math.min(1, max / Math.max(img.width, img.height));
+      const c = document.createElement('canvas');
+      c.width = Math.round(img.width * scale); c.height = Math.round(img.height * scale);
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      return c.toDataURL('image/jpeg', 0.85);
+    } finally { URL.revokeObjectURL(url); }
   }
 
   ship(key, val) {
@@ -485,32 +514,57 @@ class Component extends DCLogic {
 
   money(n) { return '$' + n; }
 
+  // Which story+art inputs the current plates were made for. If either
+  // changed, the plates are stale and must all be remade; if neither did,
+  // only the null slots are retried -- eleven calls rarely all succeed.
+  platesFingerprint(book) {
+    return (book.artFor || '') + '|' + (book.pagesFor || '');
+  }
+
   async paintPlates() {
     const book = this.state.book;
-    if (!book || !book.characterSheetUrl || (Array.isArray(book.plateUrls) && book.plateUrls.some(Boolean))) return;
+    // The plates are photographs of this child, so without the photo, the
+    // parent's consent and the signed scenes there is nothing to send.
+    if (!book || !book.photo || book.photoConsent !== true || !book.scenesToken) return;
+    const fp = this.platesFingerprint(book);
+    const have = book.platesFor === fp && Array.isArray(book.plateUrls) ? book.plateUrls : [];
+    const pages = Array.isArray(book.pages) ? book.pages.length : 0;
+    if (pages && have.length === pages && have.every(Boolean)) return;
     this.setState({ painting: true, jokeIdx: 0, plateLimited: false });
     if (!this.reduced()) {
       this.jokeTimer = setInterval(() => this.setState({ jokeIdx: this.state.jokeIdx + 1 }), 1400);
     }
     try {
-      const res = await fetch('/api/generate-plates', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ book: { ...book, photo: undefined, photoConsent: undefined } }),
-      });
-      if (res.status === 429) {
-        this.setState({ painting: false, plateLimited: true });
-        return;
+      let plateUrls;
+      if (have.some(Boolean)) {
+        // Fill the gaps one page at a time through redraw-page.
+        plateUrls = [...have];
+        for (let i = 0; i < plateUrls.length; i++) {
+          if (plateUrls[i]) continue;
+          const res = await fetch('/api/redraw-page', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ book, pageIndex: i, scenesToken: book.scenesToken }),
+          });
+          if (res.status === 429) { this.setState({ painting: false, plateLimited: true }); return; }
+          const json = await res.json().catch(() => ({}));
+          if (json.plateUrl) plateUrls[i] = json.plateUrl;
+        }
+      } else {
+        const res = await fetch('/api/generate-plates', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ book, scenesToken: book.scenesToken }),
+        });
+        if (res.status === 429) { this.setState({ painting: false, plateLimited: true }); return; }
+        const json = await res.json().catch(() => ({}));
+        plateUrls = Array.isArray(json.plateUrls) ? json.plateUrls : [];
       }
-      const json = await res.json().catch(() => ({}));
-      const plateUrls = Array.isArray(json.plateUrls) ? json.plateUrls : [];
-      // Merge over the LATEST this.state.book at write time (not the local
-      // `book` captured before the await), so this can't clobber fields a
-      // concurrent writer set while this request was in flight.
-      const updated = { ...this.state.book, plateUrls };
+      // Merge over the LATEST this.state.book at write time so this can't
+      // clobber fields a concurrent writer set while the request was in flight.
+      const updated = { ...this.state.book, plateUrls, platesFor: fp };
       try { localStorage.setItem('farsh.book', JSON.stringify(updated)); } catch (e) {}
       this.setState({ book: updated, painting: false });
     } catch (e) {
-      // Silent degradation for anything other than the 429 case above —
+      // Silent degradation for anything other than the 429 case above --
       // the confirmation page still works, just without generated plates.
       this.setState({ painting: false });
     } finally {
@@ -687,12 +741,7 @@ class Component extends DCLogic {
           return;
         }
         try {
-          const dataUrl = await new Promise((ok, err) => {
-            const reader = new FileReader();
-            reader.onload = () => ok(reader.result);
-            reader.onerror = err;
-            reader.readAsDataURL(f);
-          });
+          const dataUrl = await this.downscaleScreenshot(f);
           this.setState({ paymentScreenshot: dataUrl, screenshotError: '' });
         } catch (err) {
           this.setState({ paymentScreenshot: null, screenshotError: 'That file could not be read — try a JPEG or PNG screenshot instead.' });
@@ -748,7 +797,7 @@ class Component extends DCLogic {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              book: this.state.book,
+              book: this.orderBook(),
               ship: this.state.ship,
               format: fmt.title,
               speed: this.state.speed,
@@ -763,7 +812,14 @@ class Component extends DCLogic {
           }
           this.setState({ submitting: false, placed: true, order: json.orderNumber });
           window.scrollTo({ top: 0, behavior: 'smooth' });
-          this.paintPlates();
+          this.paintPlates().then(() => {
+            // The consent text promises the photo leaves the browser once the
+            // order is placed. The order email has it; this copy is done.
+            try {
+              const b = JSON.parse(localStorage.getItem('farsh.book') || '{}');
+              localStorage.setItem('farsh.book', JSON.stringify({ ...b, photo: null }));
+            } catch (e) {}
+          });
         } catch (err) {
           this.setState({
             submitting: false,
