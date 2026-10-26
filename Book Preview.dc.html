@@ -257,8 +257,11 @@ class Component extends DCLogic {
   componentDidMount() {
     let book = null;
     try { book = JSON.parse(localStorage.getItem('farsh.book') || 'null'); } catch (e) {}
-    const q = new URLSearchParams(location.search).get('for');
-    const audience = ['child', 'couple', 'family'].indexOf(q) > -1 ? q : ((book && book.audience) || 'child');
+    // Only the child book is sold for now (see lib/audiences.js): whatever
+    // the link or a stale saved book says, this page renders the child book,
+    // and a saved couple/family book is treated as no book at all.
+    const audience = 'child';
+    if (book && book.audience !== 'child') book = null;
     this.setState({ audience, book });
     this.bindAll();
     this.setupCursor();

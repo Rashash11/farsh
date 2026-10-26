@@ -2,6 +2,7 @@
 const { generateCoverArt } = require('../lib/generateArt');
 const { checkRateLimit } = require('../lib/rateLimit');
 const { clientIp } = require('../lib/clientIp');
+const { isAllowedAudience } = require('../lib/audiences');
 
 module.exports = async (req, res) => {
   if (req.method !== 'POST') {
@@ -17,8 +18,8 @@ module.exports = async (req, res) => {
   }
   const body = req.body && typeof req.body === 'object' ? req.body : {};
   const book = body.book || body;
-  if (!book.audience) {
-    res.status(400).json({ error: 'missing_audience', message: 'Request body must include "book.audience".' });
+  if (!isAllowedAudience(book.audience)) {
+    res.status(400).json({ error: 'unsupported_audience', message: 'We only make children\'s books right now.' });
     return;
   }
   try {

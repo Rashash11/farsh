@@ -66,3 +66,9 @@ test('buildPrompt keeps each field on one line, so it cannot add prompt structur
   const numbered = injected.split('\n').filter((l) => /^\d+\. /.test(l));
   assert.strictEqual(numbered.length, 6, 'exactly the six real beats stay numbered');
 });
+
+test('buildPrompt describes Farsh! as a children\'s book maker while only the child book is sold', () => {
+  const p = buildPrompt({ audience: 'child', names: 'Nova', data: { name: 'Nova' } });
+  assert.doesNotMatch(p, /a child, a couple, or a family/);
+  assert.match(p, /children/i);
+});

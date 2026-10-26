@@ -98,10 +98,10 @@
       <sc-if value="{{ isStep1 }}" hint-placeholder-val="{{ true }}">
         <div>
           <div style="font-size:12px;letter-spacing:0.18em;text-transform:uppercase;color:var(--color-accent-700);margin-bottom:12px;">Start here</div>
-          <h1 style="font-family:var(--font-heading);font-weight:800;font-size:clamp(30px,4vw,54px);line-height:0.94;letter-spacing:-0.04em;margin:0 0 14px;max-width:20ch;">Who is this book for?</h1>
-          <p style="font-size:16px;line-height:1.6;color:var(--color-neutral-700);margin:0 0 30px;max-width:44ch;">The answer changes the whole book: how it is written, how it is drawn, and how this page looks from here on.</p>
+          <h1 style="font-family:var(--font-heading);font-weight:800;font-size:clamp(30px,4vw,54px);line-height:0.94;letter-spacing:-0.04em;margin:0 0 14px;max-width:20ch;">A book for one small hero.</h1>
+          <p style="font-size:16px;line-height:1.6;color:var(--color-neutral-700);margin:0 0 30px;max-width:44ch;">Their name, their hair, the animal they love. The next three steps turn that into a story written and drawn for them alone.</p>
           <div style="display:grid;gap:14px;">
-            <sc-for list="{{ audienceCards }}" as="a" hint-placeholder-count="3">
+            <sc-for list="{{ audienceCards }}" as="a" hint-placeholder-count="1">
               <button onClick="{{ a.onPick }}" style="{{ a.style }}">
                 <span style="{{ a.markStyle }}" data-mark="{{ a.key }}"></span>
                 <span style="display:block;text-align:left;">
@@ -345,7 +345,10 @@ class Component extends DCLogic {
     const params = new URLSearchParams(location.search);
     const q = params.get('for');
     const seed = this.props.startAudience;
-    const map = { child: 'child', couple: 'couple', family: 'family', kid: 'child', two: 'couple' };
+    // Only the child book is sold for now (see lib/audiences.js). Any ?for=
+    // value — including old couple/family links still out there — lands on
+    // the child book rather than on a step the server would refuse.
+    const map = { child: 'child', couple: 'child', family: 'child', kid: 'child', two: 'child' };
     const pick = map[q] || map[(seed || '').toLowerCase()] || null;
 
     // Bring back a book in progress BEFORE anything else touches state.
@@ -404,7 +407,9 @@ class Component extends DCLogic {
     try { saved = JSON.parse(localStorage.getItem('farsh.book') || 'null'); } catch (e) { return; }
     if (!saved || typeof saved !== 'object') return;
 
-    const valid = ['child', 'couple', 'family'];
+    // A saved couple/family book from before the catalogue narrowed is not
+    // brought back: its fields belong to a book nobody can order now.
+    const valid = ['child'];
     const savedAudience = valid.includes(saved.audience) ? saved.audience : null;
     if (!savedAudience) return;
     if (forced && forced !== savedAudience) return; // starting a different book
@@ -647,10 +652,10 @@ class Component extends DCLogic {
       transform: on ? 'translateX(4px)' : 'none', textAlign: 'left', color: 'var(--color-text)',
     });
 
+    // The couple and family cards are hidden while only the child book is
+    // sold; the rest of this page's per-audience tables stay as they are.
     const audienceCards = [
       { key: 'child', title: 'A child', blurb: 'They are the hero: their name, their hair, the animal they love. Ages 0–10.' },
-      { key: 'couple', title: 'The two of you', blurb: 'How you met and the years since, told in very few words per page.' },
-      { key: 'family', title: 'The whole family', blurb: 'A page each, the old house, the grandparents, the year worth keeping.' },
     ].map((c) => ({
       ...c,
       onPick: () => this.setState({ audience: c.key, direction: 0, titleIdx: 0, tags: [] }),
@@ -668,7 +673,7 @@ class Component extends DCLogic {
     }));
 
     const stepMeta = [
-      { no: '01', label: 'Who for' }, { no: '02', label: 'The details' },
+      { no: '01', label: 'Start' }, { no: '02', label: 'The details' },
       { no: '03', label: 'Direction' }, { no: '04', label: 'Cover' },
     ];
 

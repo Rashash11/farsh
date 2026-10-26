@@ -1,7 +1,7 @@
 # Farsh! — personalized book platform
 
-A platform for creating personalized hardcover books: children's adventure
-books and couples' love-story books.
+A platform for creating personalized hardcover children's books. (Couple and
+family books exist in the code but are hidden for now — see `lib/audiences.js`.)
 
 ## Running it
 
@@ -26,8 +26,8 @@ read from `.env` once at startup.
 ## What's real vs. simulated
 
 - **Story text** is real — written by Claude per the details you enter in
-  the builder (name, age, what they look like, what they love / how the
-  couple met / etc.), via `POST /api/generate-book`.
+  the builder (name, age, what they look like, what they love, etc.), via
+  `POST /api/generate-book`.
 - **"Place the order" on Checkout is real, except payment.** It validates the
   order server-side, emails the full order to `ORDER_EMAIL_TO` via Resend,
   and only then returns a real order number — that email *is* the order

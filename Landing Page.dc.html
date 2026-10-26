@@ -10,7 +10,7 @@
 <x-dc>
 <helmet>
   <title>farsh! — Personalized hardcover books with your people in them</title>
-  <meta name="description" content="Hardcover children's, couple's and family books, written and illustrated around the real people in them.">
+  <meta name="description" content="Hardcover children's books, written and illustrated around the real child in them.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;800&display=swap" rel="stylesheet">
@@ -194,12 +194,7 @@
         <h2 style="font-family:var(--font-heading);font-weight:800;font-size:clamp(28px,3.4vw,46px);letter-spacing:-0.035em;margin:0;">{{ galleryTitle }}</h2>
         <span style="font-size:13px;letter-spacing:0.08em;text-transform:uppercase;color:var(--color-neutral-600);">{{ galleryCount }} · hover a cover to open it</span>
       </div>
-      <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:18px;">
-        <sc-for list="{{ audiences }}" as="aud" hint-placeholder-count="3">
-          <button onClick="{{ aud.onPick }}" style="{{ aud.style }}">{{ aud.label }}</button>
-        </sc-for>
-      </div>
-      <div style="display:flex;flex-wrap:wrap;gap:10px;padding-top:16px;border-top:2px solid var(--color-divider);">
+      <div style="display:flex;flex-wrap:wrap;gap:10px;">
         <sc-for list="{{ occasions }}" as="occ" hint-placeholder-count="5">
           <button onClick="{{ occ.onPick }}" style="{{ occ.style }}">{{ occ.label }}</button>
         </sc-for>
@@ -291,19 +286,6 @@
     </div>
   </section>
 
-  <section style="border-bottom:2px solid var(--color-divider);background:#2e2b25;color:#fff2eb;padding:clamp(40px,4.5vw,72px) clamp(20px,3.5vw,44px);">
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:clamp(24px,3vw,56px);align-items:end;">
-      <div>
-        <div style="font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:var(--color-accent-400);margin-bottom:16px;">Not only for children</div>
-        <h2 style="font-family:var(--font-heading);font-weight:800;font-size:clamp(26px,3.2vw,42px);line-height:0.98;letter-spacing:-0.04em;margin:0 0 14px;max-width:22ch;">For two of you, or for all of you.</h2>
-        <p style="font-size:16px;line-height:1.6;margin:0;color:var(--color-neutral-300);max-width:46ch;">How you met and the years since. A grandparent's stories in their own words. One page each for a whole family. Set in type, sewn and cased in book cloth.</p>
-      </div>
-      <div style="display:flex;gap:14px;flex-wrap:wrap;">
-        <a href="#books" style="background:var(--color-bg);color:var(--color-text);font-family:var(--font-heading);font-weight:800;font-size:14px;letter-spacing:0.04em;text-transform:uppercase;padding:16px 26px;transition:background .2s ease;" style-hover="background:var(--color-neutral-200);">See couples' and family books</a>
-      </div>
-    </div>
-  </section>
-
   <section style="border-bottom:2px solid var(--color-divider);padding:clamp(40px,4.5vw,72px) clamp(20px,3.5vw,44px);position:relative;">
     <h2 data-reveal="page" style="font-family:var(--font-heading);font-weight:800;font-size:clamp(28px,3.4vw,46px);letter-spacing:-0.035em;margin:0 0 34px;">What parents said after</h2>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:clamp(16px,2vw,26px);">
@@ -360,13 +342,12 @@
   <footer style="padding:clamp(36px,4vw,56px) clamp(20px,3.5vw,44px) 32px;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:clamp(24px,3vw,40px);">
     <div>
       <div style="font-family:var(--font-heading);font-weight:800;font-size:22px;letter-spacing:-0.04em;margin-bottom:10px;">farsh<span style="color:var(--color-accent);">!</span></div>
-      <p style="font-size:14px;line-height:1.6;color:var(--color-neutral-700);margin:0;max-width:28ch;">Personalised books for children and for couples, printed and bound to order.</p>
+      <p style="font-size:14px;line-height:1.6;color:var(--color-neutral-700);margin:0;max-width:28ch;">Personalised children's books, printed and bound to order.</p>
     </div>
     <div>
       <div style="font-size:12px;letter-spacing:0.1em;text-transform:uppercase;color:var(--color-neutral-600);margin-bottom:14px;">Books</div>
       <div style="display:flex;flex-direction:column;gap:8px;font-size:14px;">
         <a href="#books" style="color:var(--color-text);">For a child</a>
-        <a href="#books" style="color:var(--color-text);">For a couple</a>
         <a href="#read" style="color:var(--color-text);">Read a sample</a>
       </div>
     </div>
@@ -394,7 +375,7 @@
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props="{&quot;coverTreatment&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Full colour&quot;,&quot;Black and white&quot;],&quot;default&quot;:&quot;Full colour&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Imagery&quot;},&quot;playfulCursor&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Play&quot;},&quot;stickers&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Play&quot;}}">
 class Component extends DCLogic {
-  state = { name: 'Amara', audience: 'For a child', occasion: 'All books', page: 0, faq: 0 };
+  state = { name: 'Amara', occasion: 'All books', page: 0, faq: 0 };
 
   componentDidMount() {
     this.flipping = 0;
@@ -727,7 +708,6 @@ class Component extends DCLogic {
     const raw = (this.state.name || '').trim();
     const nameDisplay = raw || 'your kid';
     const occasion = this.state.occasion;
-    const audience = this.state.audience;
     // Carried into the builder link so a name typed here doesn't reset.
     const nameParam = raw ? '&name=' + encodeURIComponent(raw) : '';
 
@@ -743,31 +723,11 @@ class Component extends DCLogic {
       { title: 'Brave in a Big School', meta: 'Ages 5–8 · 32 pages', occ: 'Big first days', kind: 'photo', img: 'uploads/covers/brave-in-a-big-school.jpg', line: nameDisplay + ' finds the one friend who makes a big place small.' },
     ];
 
-    const coupleBooks = [
-      { title: 'The Long Way Round', meta: 'For two · 40 pages', occ: 'Anniversary', kind: 'photo', img: 'uploads/covers/the-long-way-round.jpg', line: 'Every place you lived in, in the order you lived in it.' },
-      { title: 'How We Met', meta: 'For two · 32 pages', occ: 'Anniversary', kind: 'photo', img: 'uploads/covers/great-adventure.jpg', line: 'The night neither of you meant to stay out that late.' },
-      { title: 'Vows, Roughly', meta: 'For two · 28 pages', occ: 'Wedding', kind: 'photo', img: 'uploads/covers/vows-roughly.jpg', line: 'The promises you actually make to each other on a Tuesday.' },
-      { title: 'Two Thousand Miles', meta: 'For two · 32 pages', occ: 'Far apart', kind: 'photo', img: 'uploads/covers/two-thousand-miles.jpg', line: 'Counted in airports, time zones and unread messages.' },
-      { title: 'Ten Years In', meta: 'For two · 40 pages', occ: 'Anniversary', kind: 'photo', img: 'uploads/covers/ten-years-in.jpg', line: 'A decade of small ordinary evenings, set in type.' },
-      { title: 'The Wedding Book', meta: 'For two · 36 pages', occ: 'Wedding', kind: 'photo', img: 'uploads/covers/under-the-sea.jpg', line: 'For the people who were there, and the ones who were not.' },
-    ];
 
-    const familyBooks = [
-      { title: 'The Whole Lot of Us', meta: 'Everyone · 40 pages', occ: 'All of us', kind: 'photo', img: 'uploads/covers/the-whole-lot-of-us.jpg', line: 'One page each, and nobody gets left out.' },
-      { title: 'Welcome, Small One', meta: 'Everyone · 28 pages', occ: 'New baby', kind: 'photo', img: 'uploads/covers/goodnight-little-one.jpg', line: 'The week the house got louder and better.' },
-      { title: 'Where We Are From', meta: 'Everyone · 44 pages', occ: 'Grandparents', kind: 'photo', img: 'uploads/covers/where-we-are-from.jpg', line: 'Four generations, told so a six-year-old can follow it.' },
-      { title: 'The Summer of the Van', meta: 'Everyone · 36 pages', occ: 'Holidays', kind: 'photo', img: 'uploads/covers/dragons-cave-quest.jpg', line: 'Sand in everything, and nobody wanted to go home.' },
-      { title: 'Grandad Says', meta: 'Everyone · 32 pages', occ: 'Grandparents', kind: 'photo', img: 'uploads/covers/grandad-says.jpg', line: 'His stories, in his words, before they go anywhere.' },
-      { title: 'Our Year', meta: 'Everyone · 40 pages', occ: 'Holidays', kind: 'photo', img: 'uploads/covers/our-year.jpg', line: 'Twelve months, one page a month, all of you in it.' },
-    ];
-
-    const sets = { 'For a child': childBooks, 'For two of you': coupleBooks, 'For the whole family': familyBooks };
-    const occSets = {
-      'For a child': ['All books', 'Birthday', 'Bedtime', 'New sibling', 'Big first days'],
-      'For two of you': ['All books', 'Anniversary', 'Wedding', 'Far apart'],
-      'For the whole family': ['All books', 'New baby', 'Holidays', 'Grandparents', 'All of us'],
-    };
-    const all = sets[audience] || childBooks;
+    // Only the child book is sold for now (see lib/audiences.js); the couple
+    // and family galleries left with their chips.
+    const occasionLabels = ['All books', 'Birthday', 'Bedtime', 'New sibling', 'Big first days'];
+    const all = childBooks;
     const books = occasion === 'All books' ? all : all.filter((b) => b.occ === occasion);
 
     const chipStyle = (active) => ({
@@ -794,18 +754,9 @@ class Component extends DCLogic {
       titleTeaser: raw + ' and the door in the garden wall',
       nameUpper: (raw || 'Amara').toUpperCase(),
       onName: (e) => this.setState({ name: e.target.value }),
-      galleryTitle: occasion === 'All books'
-        ? ({ 'For a child': 'Nine stories, one small hero',
-             'For two of you': 'Six books for the two of you',
-             'For the whole family': 'Six books with everyone in them' }[audience])
-        : occasion,
+      galleryTitle: occasion === 'All books' ? 'Nine stories, one small hero' : occasion,
       galleryCount: books.length + (books.length === 1 ? ' book' : ' books'),
-      audiences: ['For a child', 'For two of you', 'For the whole family'].map((label) => ({
-        label,
-        style: { ...chipStyle(label === audience), fontSize: '13px', padding: '13px 20px' },
-        onPick: () => this.setState({ audience: label, occasion: 'All books' }),
-      })),
-      occasions: (occSets[audience] || occSets['For a child']).map((label) => ({
+      occasions: occasionLabels.map((label) => ({
         label, style: chipStyle(label === occasion), onPick: () => this.setState({ occasion: label }),
       })),
       books: books.map((b) => ({
@@ -815,10 +766,10 @@ class Component extends DCLogic {
           backgroundImage: b.img ? 'url("' + b.img + '")' : 'none',
           backgroundSize: 'cover', backgroundPosition: 'center',
         },
-        href: './Book Builder.dc.html?for=' + ({ 'For a child': 'child', 'For two of you': 'couple', 'For the whole family': 'family' }[audience] || 'child') + nameParam,
+        href: './Book Builder.dc.html?for=child' + nameParam,
       })),
-      builderHref: './Book Builder.dc.html?for=' + ({ 'For a child': 'child', 'For two of you': 'couple', 'For the whole family': 'family' }[audience] || 'child') + nameParam,
-      ctaLabel: { 'For a child': "Build my kid's book", 'For two of you': 'Build our book', 'For the whole family': 'Build our family book' }[audience] || "Build my kid's book",
+      builderHref: './Book Builder.dc.html?for=child' + nameParam,
+      ctaLabel: "Build my kid's book",
       spread: (() => {
         const s = this.spreads()[this.state.page];
         return { ...s, imgStyle: {
