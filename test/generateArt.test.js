@@ -132,9 +132,22 @@ test('a 429 waits backoffMs before the retry instead of retrying at once', async
   assert.ok(times[1] - times[0] >= 35, 'retried after ' + (times[1] - times[0]) + 'ms');
 });
 
-test('the cover is attached as a second reference only when it is our own URL', async () => {
+// isOwnImageUrl reads the Blob configuration at call time; each test sets
+// exactly the configuration it means and puts the old one back.
+function withBlobEnv(env, fn) {
+  const keys = ['BLOB_PUBLIC_HOST', 'BLOB_READ_WRITE_TOKEN'];
+  const saved = Object.fromEntries(keys.map((k) => [k, process.env[k]]));
+  for (const k of keys) { if (env[k] === undefined) delete process.env[k]; else process.env[k] = env[k]; }
+  const restore = () => { for (const k of keys) { if (saved[k] === undefined) delete process.env[k]; else process.env[k] = saved[k]; } };
+  let out;
+  try { out = fn(); } catch (e) { restore(); throw e; }
+  return out && typeof out.then === 'function' ? out.finally(restore) : (restore(), out);
+}
+const OUR_HOST = 'abc123xyz.public.blob.vercel-storage.com';
+
+test('the cover is attached as a second reference only when it is our own URL', () => withBlobEnv({ BLOB_PUBLIC_HOST: OUR_HOST }, async () => {
   const own = okFetch();
-  await generatePlates({ ...child, scenes, coverUrl: 'https://abc.public.blob.vercel-storage.com/farsh-art/cover-1.png' },
+  await generatePlates({ ...child, scenes, coverUrl: `https://${OUR_HOST}/farsh-art/cover-1.png` },
     { fetchFn: own, saveFn: fakeSave, fetchImage: async () => Buffer.from(PNG_B64, 'base64') });
   assert.strictEqual(own.seen[0].contents[0].parts.filter((p) => p.inline_data).length, 2);
 
@@ -144,17 +157,42 @@ test('the cover is attached as a second reference only when it is our own URL', 
     { fetchFn: foreign, saveFn: fakeSave, fetchImage: async () => { fetched++; return Buffer.from(PNG_B64, 'base64'); } });
   assert.strictEqual(fetched, 0, 'must not fetch a foreign URL');
   assert.strictEqual(foreign.seen[0].contents[0].parts.filter((p) => p.inline_data).length, 1);
-});
+}));
 
-test('isOwnImageUrl accepts local generated paths and the Blob host, nothing else', () => {
+test('isOwnImageUrl accepts local generated paths and our pinned Blob host, nothing else', () => withBlobEnv({ BLOB_PUBLIC_HOST: OUR_HOST }, () => {
   assert.strictEqual(isOwnImageUrl('/uploads/generated/cover-1.png'), true);
-  assert.strictEqual(isOwnImageUrl('https://x.public.blob.vercel-storage.com/farsh-art/a.png'), true);
-  assert.strictEqual(isOwnImageUrl('http://x.public.blob.vercel-storage.com/a.png'), false);
+  assert.strictEqual(isOwnImageUrl(`https://${OUR_HOST}/farsh-art/a.png`), true);
+  assert.strictEqual(isOwnImageUrl(`http://${OUR_HOST}/farsh-art/a.png`), false);
   assert.strictEqual(isOwnImageUrl('/../.env'), false);
   assert.strictEqual(isOwnImageUrl('/package.json'), false);
   assert.strictEqual(isOwnImageUrl('https://evil.example.com/a.png'), false);
-  assert.strictEqual(isOwnImageUrl('https://x.public.blob.vercel-storage.com.evil.com/a.png'), false);
-});
+  assert.strictEqual(isOwnImageUrl(`https://${OUR_HOST}.evil.com/farsh-art/a.png`), false);
+}));
+
+test('another Blob store\'s host is not ours', () => withBlobEnv({ BLOB_PUBLIC_HOST: OUR_HOST }, () => {
+  assert.strictEqual(isOwnImageUrl('https://someoneelse.public.blob.vercel-storage.com/farsh-art/a.png'), false);
+}));
+
+test('a URL on our host outside farsh-art/ is not ours', () => withBlobEnv({ BLOB_PUBLIC_HOST: OUR_HOST }, () => {
+  assert.strictEqual(isOwnImageUrl(`https://${OUR_HOST}/farsh-orders/FA-1234.png`), false);
+  assert.strictEqual(isOwnImageUrl(`https://${OUR_HOST}/a.png`), false);
+  assert.strictEqual(isOwnImageUrl(`https://${OUR_HOST}/farsh-art`), false);
+}));
+
+test('without BLOB_PUBLIC_HOST the host is derived from the read-write token', () => withBlobEnv({ BLOB_READ_WRITE_TOKEN: 'vercel_blob_rw_AbC123XyZ_s3cretPart' }, () => {
+  assert.strictEqual(isOwnImageUrl(`https://${OUR_HOST}/farsh-art/a.png`), true);
+  assert.strictEqual(isOwnImageUrl('https://other.public.blob.vercel-storage.com/farsh-art/a.png'), false);
+}));
+
+test('BLOB_PUBLIC_HOST wins over the token', () => withBlobEnv({ BLOB_PUBLIC_HOST: 'pinned.public.blob.vercel-storage.com', BLOB_READ_WRITE_TOKEN: 'vercel_blob_rw_AbC123XyZ_s3cretPart' }, () => {
+  assert.strictEqual(isOwnImageUrl('https://pinned.public.blob.vercel-storage.com/farsh-art/a.png'), true);
+  assert.strictEqual(isOwnImageUrl(`https://${OUR_HOST}/farsh-art/a.png`), false);
+}));
+
+test('with no Blob store configured, no https URL is ours', () => withBlobEnv({}, () => {
+  assert.strictEqual(isOwnImageUrl(`https://${OUR_HOST}/farsh-art/a.png`), false);
+  assert.strictEqual(isOwnImageUrl('/uploads/generated/plate-1.png'), true);
+}));
 
 test('redrawPlate clamps the index to the last page', async () => {
   const fetchFn = okFetch();
