@@ -4,7 +4,7 @@ const { checkRateLimit } = require('../lib/rateLimit');
 const { clientIp } = require('../lib/clientIp');
 const { isAllowedAudience } = require('../lib/audiences');
 
-module.exports = async (req, res) => {
+async function handler(req, res) {
   if (req.method !== 'POST') {
     res.status(405).json({ error: 'method_not_allowed', message: 'POST only.' });
     return;
@@ -29,3 +29,9 @@ module.exports = async (req, res) => {
     res.status(502).json({ error: 'art_failed', message: 'Could not paint right now.' });
   }
 };
+
+module.exports = handler;
+// Eleven Gemini calls at concurrency 3 with a 60s abort each can legitimately
+// run a couple of minutes; without this Vercel would cut the function off at
+// its default and the customer would see a silent "no plates".
+module.exports.config = { maxDuration: 300 };

@@ -1,7 +1,6 @@
 # Farsh! — personalized book platform
 
-A platform for creating personalized hardcover children's books. (Couple and
-family books exist in the code but are hidden for now — see `lib/audiences.js`.)
+A platform for creating personalized hardcover children's books: eleven photorealistic pages and a cover, illustrated from the child's own photo. (Couple and family books exist in the code but are hidden for now — see `lib/audiences.js`.)
 
 ## Running it
 
@@ -40,20 +39,17 @@ read from `.env` once at startup.
 
 Three endpoints paint the art: `POST /api/generate-cover`,
 `POST /api/generate-plates` (after Checkout), and `POST /api/redraw-page`.
-A builder photo drives the art when present, falling back to the
-character's text description if that pass fails (safety refusal, network
-error) — Preview shows a small note when it does. Without `GEMINI_API_KEY`,
-or on any Gemini failure, all three return null URLs and the stock
-typographic art stays put. `GEMINI_API_KEY` is required for art; Vercel
-deploys also need `BLOB_READ_WRITE_TOKEN` (locally: `uploads/generated/`).
+The child's photo is required. It is EXIF-stripped and sent as the reference image for the cover and for every page; the cover is sent as a second reference for the pages so clothes stay consistent. Pages are generated three at a time with a 60-second limit each, so a plates request can take a few minutes. Scenes are signed by /api/generate-book (ORDER_CONFIRM_SECRET), so the plate endpoints cannot be used to illustrate arbitrary text.
 
 ## Project layout
 
 ```
 server.js              Express server: static files + the story/art API routes + rate limiting
-lib/generateBook.js     Builds the prompt, calls Claude, returns 6 page texts
+lib/generateBook.js     Builds the prompt, calls Claude, returns eleven page texts
 lib/generateArt.js      Gemini image pipeline: character sheet -> cover -> plates
-lib/artPrompts.js       Pure, snapshot-testable prompt builders for the illustrations
+lib/artPrompts.js       Photorealistic, identity-preserving prompt builders
+lib/pageCount.js        The number of story pages
+lib/scenesToken.js      Signs the scene lines between writer and illustrator
 lib/rateLimit.js        Per-IP + global rate limiting for the generation endpoints
 lib/stripExif.js        Strips EXIF metadata from an uploaded photo before it's sent to Gemini
 api/                    Vercel serverless functions — one per route, mirroring server.js

@@ -1,5 +1,10 @@
 {
   "redirects": [
     { "source": "/", "destination": "/Landing%20Page.dc.html" }
-  ]
+  ],
+  "functions": {
+    "api/generate-plates.js": { "maxDuration": 300 },
+    "api/redraw-page.js": { "maxDuration": 300 },
+    "api/generate-cover.js": { "maxDuration": 300 }
+  }
 }
