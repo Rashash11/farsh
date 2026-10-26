@@ -18,6 +18,8 @@ const { generateCoverArt, generatePlates, redrawPlate } = require('./lib/generat
 const { checkRateLimit } = require('./lib/rateLimit');
 const { clientIp } = require('./lib/clientIp');
 const { isAllowedAudience } = require('./lib/audiences');
+const { signScenes, verifyScenes } = require('./lib/scenesToken');
+const { PAGE_COUNT } = require('./lib/pageCount');
 const { placeOrder } = require('./lib/placeOrder');
 const { verify: verifyOrderToken } = require('./lib/orderToken');
 const { sendPaymentDecision } = require('./lib/confirmPayment');
@@ -49,9 +51,12 @@ app.get('/', (req, res) => res.redirect('/Landing Page.dc.html'));
 // payloads) is what the smaller app-wide limit below is meant to protect.
 const artJson = express.json({ limit: '8mb' });
 
-function artRoute(handler) {
+// `needsScenes` routes illustrate scene lines; those lines must be the
+// ones /api/generate-book signed (see lib/scenesToken.js), never the
+// client's own text.
+function artRoute(handler, { needsScenes = false, weight = 1 } = {}) {
   return async (req, res) => {
-    const limited = checkRateLimit(clientIp(req), 'art');
+    const limited = checkRateLimit(clientIp(req), 'art', weight);
     if (limited) {
       res.set('Retry-After', String(limited.retryAfterSeconds));
       return res.status(limited.status).json({ error: limited.error, message: limited.message });
@@ -59,6 +64,15 @@ function artRoute(handler) {
     const book = req.body && typeof req.body === 'object' ? req.body.book || req.body : {};
     if (!isAllowedAudience(book.audience)) {
       return res.status(400).json({ error: 'unsupported_audience', message: 'We only make children\'s books right now.' });
+    }
+    if (needsScenes) {
+      try {
+        book.scenes = verifyScenes(req.body.scenesToken);
+      } catch (err) {
+        console.error('[art] scenes refused:', err.message);
+        if (err.code === 'not_configured') console.error('  -> set ORDER_CONFIRM_SECRET in .env; plates cannot be illustrated without it.');
+        return res.status(400).json({ error: 'invalid_scenes', message: 'Please write the story again before illustrating it.' });
+      }
     }
     try {
       res.json(await handler(book, req.body));
@@ -97,12 +111,12 @@ app.post('/api/place-order', artJson, async (req, res) => {
 });
 
 app.post('/api/generate-cover', artJson, artRoute((book) => generateCoverArt(book)));
-app.post('/api/generate-plates', artJson, artRoute((book) => generatePlates(book)));
-app.post('/api/redraw-page', artJson, artRoute((book, body) => redrawPlate(book, body.pageIndex)));
+app.post('/api/generate-plates', artJson, artRoute((book) => generatePlates(book), { needsScenes: true, weight: PAGE_COUNT }));
+app.post('/api/redraw-page', artJson, artRoute((book, body) => redrawPlate(book, body.pageIndex), { needsScenes: true }));
 
 // Everything else — in particular /api/generate-book — gets the smaller,
 // app-wide body limit. The client strips art fields (photo, photoConsent,
-// characterSheetUrl, coverUrl, plateUrls) out of the book before posting
+// coverUrl, plateUrls) out of the book before posting
 // to this route, so it never carries photo data. Registered AFTER the art
 // routes above so it never runs for their requests (see ordering comment).
 app.use(express.json({ limit: '256kb' }));
@@ -123,7 +137,15 @@ app.post('/api/generate-book', async (req, res) => {
     // Explicit .env key preferred; otherwise the SDK's own credential
     // resolution (auth token / `ant auth login` profile) gets a chance.
     const { pages, scenes } = await generateBookPages(book, process.env.ANTHROPIC_API_KEY);
-    res.json({ pages, scenes });
+    let scenesToken = null;
+    try {
+      scenesToken = signScenes(scenes);
+    } catch (err) {
+      // The story still works without it; only illustrating does not.
+      console.error('[generate-book] could not sign scenes:', err.message);
+      console.error('  -> set ORDER_CONFIRM_SECRET in .env, or plates cannot be illustrated.');
+    }
+    res.json({ pages, scenes, scenesToken });
   } catch (err) {
     // Two audiences, two texts. `message` is read straight into the page a
     // customer is looking at, so it never carries setup instructions or

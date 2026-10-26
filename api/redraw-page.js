@@ -1,5 +1,6 @@
 // Vercel serverless twin of /api/redraw-page in server.js.
 const { redrawPlate } = require('../lib/generateArt');
+const { verifyScenes } = require('../lib/scenesToken');
 const { checkRateLimit } = require('../lib/rateLimit');
 const { clientIp } = require('../lib/clientIp');
 const { isAllowedAudience } = require('../lib/audiences');
@@ -20,6 +21,14 @@ module.exports = async (req, res) => {
   const book = body.book || body;
   if (!isAllowedAudience(book.audience)) {
     res.status(400).json({ error: 'unsupported_audience', message: 'We only make children\'s books right now.' });
+    return;
+  }
+  try {
+    book.scenes = verifyScenes(body.scenesToken);
+  } catch (err) {
+    console.error('[art] scenes refused:', err.message);
+    if (err.code === 'not_configured') console.error('  -> set ORDER_CONFIRM_SECRET on this deployment; plates cannot be illustrated without it.');
+    res.status(400).json({ error: 'invalid_scenes', message: 'Please write the story again before illustrating it.' });
     return;
   }
   try {

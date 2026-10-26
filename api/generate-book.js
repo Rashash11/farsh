@@ -3,6 +3,7 @@
 // can't tell which one it's talking to. server.js remains the local dev path.
 
 const { generateBookPages } = require('../lib/generateBook');
+const { signScenes } = require('../lib/scenesToken');
 const { checkRateLimit } = require('../lib/rateLimit');
 const { clientIp } = require('../lib/clientIp');
 const { isAllowedAudience } = require('../lib/audiences');
@@ -29,7 +30,14 @@ module.exports = async (req, res) => {
 
   try {
     const { pages, scenes } = await generateBookPages(book, process.env.ANTHROPIC_API_KEY);
-    res.status(200).json({ pages, scenes });
+    let scenesToken = null;
+    try {
+      scenesToken = signScenes(scenes);
+    } catch (err) {
+      console.error('[generate-book] could not sign scenes:', err.message);
+      console.error('  -> set ORDER_CONFIRM_SECRET on this deployment, or plates cannot be illustrated.');
+    }
+    res.status(200).json({ pages, scenes, scenesToken });
   } catch (err) {
     // See the note in server.js: `message` is customer-facing, the detail
     // below is for whoever is reading the function logs.
