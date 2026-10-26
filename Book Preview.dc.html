@@ -142,7 +142,7 @@
         </sc-if>
       </div>
     </div>
-    <div style="font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:rgba(240,230,211,0.6);text-align:center;margin-top:8px;">Final illustrations are painted after you approve</div>
+    <div style="font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:rgba(240,230,211,0.6);text-align:center;margin-top:8px;">Final pictures are photographed after you approve</div>
 
     <sc-if value="{{ editing }}" hint-placeholder-val="{{ false }}">
       <div style="margin-top:14px;">
@@ -154,7 +154,7 @@
     </sc-if>
 
     <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:18px;">
-      <sc-for list="{{ thumbs }}" as="th" hint-placeholder-count="6" data-on-dark="1">
+      <sc-for list="{{ thumbs }}" as="th" hint-placeholder-count="11" data-on-dark="1">
         <button onClick="{{ th.onGo }}" style="{{ th.style }}">
           <span style="display:block;font-family:var(--font-heading);font-weight:800;font-size:12px;letter-spacing:0.08em;">{{ th.no }}</span>
           <span style="display:block;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;margin-top:4px;">{{ th.label }}</span>
@@ -207,7 +207,7 @@ const MARKS = {
 
 const THEME = {
   child: { mode: 'For a child', ground: 'var(--wash), var(--color-bg)', markAnim: 'wobble 2.4s ease-in-out infinite',
-    closeBg: '#402310', closeInk: '#fff2eb', ctaBg: '#ffe1d0', ctaInk: '#402310', pages: '32 pages', stock: '150gsm uncoated' },
+    closeBg: '#402310', closeInk: '#fff2eb', ctaBg: '#ffe1d0', ctaInk: '#402310', pages: '12 pages', stock: '150gsm uncoated' },
   couple: { mode: 'For two of you', ground: 'radial-gradient(120% 100% at 86% 0%, #ffe1d0 0%, rgba(255,225,208,0) 66%), var(--color-bg)', markAnim: 'beat 2.6s ease-in-out infinite',
     closeBg: '#643312', closeInk: '#fff2eb', ctaBg: '#ffe1d0', ctaInk: '#402310', pages: '48 pages', stock: 'Cloth, sewn by hand' },
   family: { mode: 'For the whole family', ground: 'radial-gradient(130% 100% at 50% 0%, #e1eecc 0%, rgba(225,238,204,0) 70%), var(--color-bg)', markAnim: 'driftY 4s ease-in-out infinite',
@@ -262,7 +262,14 @@ class Component extends DCLogic {
     // and a saved couple/family book is treated as no book at all.
     const audience = 'child';
     if (book && book.audience !== 'child') book = null;
-    this.setState({ audience, book });
+    // A book saved before the photo became required has nothing to be
+    // photographed from. Send it back to the Builder's photo step rather
+    // than paying for a cover that cannot look like the child.
+    if (book && (!book.photo || book.photoConsent !== true)) {
+      location.replace('./Book Builder.dc.html?for=child');
+      return;
+    }
+    this.setState({ audience, book, edits: (book && book.edits) || {} });
     this.bindAll();
     this.setupCursor();
     if (book) this.maybeGenerate(book);
@@ -406,7 +413,7 @@ class Component extends DCLogic {
       // generated-art fields — none of which the writer needs, and posting
       // them here would blow past this route's small app-wide body limit
       // (413) and silently fall back to the sample story. Strip them.
-      const { photo, photoConsent, characterSheetUrl, coverUrl, plateUrls, ...textBook } = book;
+      const { photo, photoConsent, coverUrl, plateUrls, ...textBook } = book;
       const res = await fetch('/api/generate-book', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -416,7 +423,7 @@ class Component extends DCLogic {
       if (!res.ok || !Array.isArray(json.pages)) {
         throw new Error((json && json.message) || 'We could not write the book just now.');
       }
-      this.patchBook({ pages: json.pages, scenes: Array.isArray(json.scenes) ? json.scenes : [], pagesFor: fp });
+      this.patchBook({ pages: json.pages, scenes: Array.isArray(json.scenes) ? json.scenes : [], scenesToken: json.scenesToken || null, pagesFor: fp });
       this.setState({ generating: false, genError: null });
     } catch (e) {
       this.setState({ generating: false, genError: (e && e.message) || 'We could not write the book just now.' });
@@ -468,14 +475,12 @@ class Component extends DCLogic {
       // server-side (coverUrl null) — must still mark artFor so a repeat
       // page load doesn't silently re-bill the art API every time.
       const fields = {
-        characterSheetUrl: json.characterSheetUrl || null,
         coverUrl: json.coverUrl || null,
         artFor: fp,
-        artNote: json.fellBackToDescription ? 'We illustrated from your description instead of the photo.' : '',
+        artNote: '',
       };
-      // A character sheet now exists — the photo is no longer needed and
-      // should stop being kept around / re-sent on every later art call.
-      if (json.characterSheetUrl) fields.photo = null;
+      // The photo stays. It is the reference for every page, and nulling it
+      // here also broke the cover fingerprint so the next visit re-billed.
       this.patchBook(fields);
       this.setState({ paintingCover: false });
     } catch (e) {
@@ -487,14 +492,20 @@ class Component extends DCLogic {
     const a = this.state.audience;
     const n = this.names();
     const first = String(n).split(' ')[0];
+    // Keep child at eleven entries — mirrors PAGE_COUNT in lib/pageCount.js by hand; the real story drives the count when present.
     const sets = {
       child: [
-        { chapter: 'Chapter one', text: n + ' woke up before the sun did, which had never happened before. Outside the window, the garden wall had grown a small green door.' },
-        { chapter: 'Chapter two', text: 'On the other side sat someone very large and very shy. "I have been waiting all week," it said. "Nobody else is brave enough to knock."' },
-        { chapter: 'Chapter three', text: 'They walked until the houses ran out. ' + first + ' did not once ask how far it was, which surprised them both.' },
-        { chapter: 'Chapter four', text: 'The trouble, when they found it, was smaller than expected. Most trouble is, once somebody stands still and looks at it properly.' },
-        { chapter: 'Chapter five', text: 'By the time the street woke up, ' + first + ' had already fixed the whole problem, and was home in time for breakfast with grass on both knees.' },
-        { chapter: 'The last page', text: 'The door is still there. ' + first + ' checks it every morning, and every so often it is open.' },
+        { text: n + ' woke before the sun, which had never happened before. Out of the window the garden wall had a small green door in it, and ' + first + ' was sure it had not been there yesterday. Breakfast could wait. Shoes could not.' },
+        { text: 'The door opened onto a path of white stones. ' + first + ' walked it slowly, touching every leaf, counting every butterfly, and found a garden nobody had ever told them about, humming with bees.' },
+        { text: 'Under a bush something small was crying. A rabbit, lost and shivering. ' + first + ' knelt down, spoke very quietly, and waited until the rabbit hopped into both hands. "We will find your family," ' + first + ' promised.' },
+        { text: 'They did, by the stream. Then the path went on, past hills and little houses, further than ' + first + ' had ever been. It was a long way. ' + first + ' did not once ask how far, which surprised them both.' },
+        { text: 'In an old stone library ' + first + ' found a book of maps. One page showed the forest, and in the forest, drawn in careful ink, a dragon. ' + first + ' read that page three times.' },
+        { text: 'The dragon was real, and enormous, and asleep in a clearing. When it opened one eye, ' + first + ' stood very still. The dragon did not roar. It sighed. It looked, more than anything, lonely.' },
+        { text: 'Its paw was hurt. ' + first + ' wanted to run, and stayed instead, and fetched water, and talked to it about rabbits until the healer came. By evening the dragon was snoring, and ' + first + ' had a friend.' },
+        { text: 'That night a storm broke the little bridge by the village. In the morning everyone was carrying stones. ' + first + ' carried stones too, small ones, lots of them, until the road was safe again.' },
+        { text: 'One family had lost nearly everything in the rain. ' + first + ' went home, filled a basket, and brought it back without being asked. Nobody said much. Everybody smiled.' },
+        { text: 'When ' + first + ' came home, the whole story had got there first. "A real adventurer," said the people who loved ' + first + ' most, "is not the one with the biggest boots. It is the one who stops to help."' },
+        { text: 'The door is still there. ' + first + ' checks it every morning, and every so often it is open, and there is always somebody on the other side who needs a hand.' },
       ],
       couple: [
         { chapter: 'One', text: 'Neither of you wanted to go to that wedding. This is the first thing the book gets right about ' + n + '.' },
@@ -515,16 +526,21 @@ class Component extends DCLogic {
     };
     const genPages = (this.state.book && Array.isArray(this.state.book.pages)) ? this.state.book.pages : null;
     const gen = (this.state.book && Array.isArray(this.state.book.plateUrls)) ? this.state.book.plateUrls : [];
-    return (sets[a] || sets.child).map((s, i) => ({
+    const base = sets[a] || sets.child;
+    const count = genPages ? genPages.length : base.length;
+    return Array.from({ length: count }, (_, i) => {
+      const s = base[i] || base[base.length - 1];
+      return {
       ...s,
       img: gen[i] || PLATES[i % PLATES.length],
-      alt: 'Illustrated page ' + (i + 1),
-      plate: 'Plate ' + String(i + 1).padStart(2, '0'),
+      alt: 'Photographed page ' + (i + 1),
+      plate: gen[i] ? 'Photographed for you' : 'Sample page',
       // Manual edits always win. Otherwise prefer the AI-written page for
       // this book; fall back to the sample text if generation hasn't
       // finished yet (or failed) so the page is never blank.
       text: this.state.edits[a + ':' + i] || (genPages && genPages[i]) || s.text,
-    }));
+      };
+    });
   }
 
   async redrawPage() {
@@ -534,7 +550,7 @@ class Component extends DCLogic {
     try {
       const res = await fetch('/api/redraw-page', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ book: { ...book, photo: undefined, photoConsent: undefined }, pageIndex: i }),
+        body: JSON.stringify({ book, pageIndex: i, scenesToken: book.scenesToken || null }),
       });
       const json = await res.json().catch(() => ({}));
       if (json.plateUrl) {
@@ -566,13 +582,14 @@ class Component extends DCLogic {
       '</div>';
     }
     const writing = this.state.generating;
+    const size = (s.text || '').length > 420 ? 'clamp(11px,1.25vw,17px)' : 'clamp(13px,1.6vw,22px)';
     const joke = JOKES[this.state.jokeIdx % JOKES.length];
     const body = writing
       ? '<p aria-live="polite" style="font-family:var(--font-heading);font-weight:400;font-size:clamp(13px,1.6vw,22px);line-height:1.35;letter-spacing:-0.02em;margin:0 0 8px;color:var(--color-neutral-600);font-style:italic;">Writing your book\u2026</p>' +
         '<p style="font-size:clamp(11px,1.1vw,14px);line-height:1.4;margin:0;color:var(--color-accent-700);">' + this.esc(joke) + '</p>'
-      : '<p style="font-family:var(--font-heading);font-weight:400;font-size:clamp(13px,1.6vw,22px);line-height:1.35;letter-spacing:-0.02em;margin:0;color:var(--color-text);">' + this.esc(s.text) + '</p>';
+      : '<p style="font-family:var(--font-heading);font-weight:400;font-size:' + size + ';line-height:1.35;letter-spacing:-0.02em;margin:0;color:var(--color-text);">' + this.esc(s.text) + '</p>';
     return '<div class="xb-pg xb-pg-text">' +
-      '<div style="font-size:clamp(9px,1vw,11px);letter-spacing:0.18em;text-transform:uppercase;color:var(--color-accent-700);">' + this.esc(s.chapter) + '</div>' +
+      '<div style="font-size:clamp(9px,1vw,11px);letter-spacing:0.18em;text-transform:uppercase;color:var(--color-accent-700);">' + 'Page ' + (i + 1) + '</div>' +
       body +
       '<div style="font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--color-neutral-600);text-align:right;">Page ' + (((i % list.length + list.length) % list.length) + 1) + ' of ' + list.length + '</div>' +
     '</div>';
@@ -590,7 +607,7 @@ class Component extends DCLogic {
     const cap = document.querySelector('[data-book-caption]');
     if (cap) {
       const list = this.spreads();
-      cap.textContent = list[i].chapter + ' \u00b7 Page ' + (i + 1) + ' of ' + list.length;
+      cap.textContent = 'Page ' + (i + 1) + ' of ' + list.length;
     }
   }
 
@@ -639,7 +656,7 @@ class Component extends DCLogic {
     book.appendChild(turnEl);
     this.bookIndex = target;
     const cap = document.querySelector('[data-book-caption]');
-    if (cap) cap.textContent = list[target].chapter + ' \u00b7 Page ' + (target + 1) + ' of ' + list.length;
+    if (cap) cap.textContent = 'Page ' + (target + 1) + ' of ' + list.length;
     this.flipTween = gsap.to(turnEl.querySelector('.xb-flap'), {
       rotationY: goingNext ? -180 : 180,
       transformOrigin: goingNext ? 'left center' : 'right center',
@@ -696,7 +713,7 @@ class Component extends DCLogic {
     const list = this.spreads();
     const spread = list[Math.min(this.state.page, list.length - 1)];
     const dirNames = {
-      child: ['Midnight Magic', 'Scrapbook', 'Toybox'],
+      child: ['Golden Hour', 'Moonlit', 'Storybook Kingdom'],
       couple: ['Midnight Velvet', 'Letter Press', 'Paper Garden'],
       family: ['Kitchen Table', 'The Album', 'The Long Table'],
     };
@@ -745,7 +762,11 @@ class Component extends DCLogic {
         if (this.state.editing) {
           const key = a + ':' + this.state.page;
           const text = (this.state.draft || '').trim();
-          this.setState({ editing: false, edits: { ...this.state.edits, [key]: text || undefined } });
+          const edits = { ...this.state.edits, [key]: text || undefined };
+          this.setState({ editing: false, edits });
+          // Edits are part of the approved book: Checkout sends them in the
+          // order, so they must outlive this page.
+          this.patchBook({ edits });
         } else {
           this.setState({ editing: true, draft: spread.text });
         }
@@ -753,11 +774,11 @@ class Component extends DCLogic {
 
       hasGeneratedPlate: !!(this.state.book && this.state.book.plateUrls && this.state.book.plateUrls[this.state.page]),
       onRedraw: () => this.redrawPage(),
-      redrawLabel: this.state.redrawing ? 'Repainting…' : 'Redraw this picture',
+      redrawLabel: this.state.redrawing ? 'Taking it again…' : 'Take this picture again',
 
       thumbs: list.map((s, i) => ({
         no: String(i + 1).padStart(2, '0'),
-        label: i === list.length - 1 ? 'End' : s.chapter.replace('Chapter ', 'Ch. '),
+        label: i === list.length - 1 ? 'The end' : 'Page',
         onGo: () => this.goSpread(i),
         style: {
           appearance: 'none', cursor: 'pointer', padding: '10px 13px', textAlign: 'left',
