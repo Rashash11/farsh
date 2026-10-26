@@ -189,7 +189,7 @@
           <sc-if value="{{ noBook }}">
             <div role="status" style="border:2px solid var(--color-text);background:var(--color-bg);padding:16px 18px;margin-bottom:16px;font-size:13px;line-height:1.6;">
               {{ noBookReason }}
-              <a href="{{ noBookHref }}" style="text-decoration:underline;font-weight:700;">{{ noBookCta }}</a>
+              <a href="{{ noBookHref }}" onClick="{{ onNoBookLink }}" style="text-decoration:underline;font-weight:700;">{{ noBookCta }}</a>
               and you will come back here at the end.
             </div>
           </sc-if>
@@ -200,12 +200,17 @@
             <div role="alert" style="margin-bottom:14px;padding:14px 16px;border:2px solid var(--color-accent-700);font-size:13px;line-height:1.6;color:var(--color-accent-700);font-weight:700;">{{ orderError }}</div>
           </sc-if>
           <sc-if value="{{ painting }}" hint-placeholder-val="{{ false }}">
-            <p aria-live="polite" style="font-size:14px;margin:0 0 14px;opacity:0.85;">Your pictures are being taken — {{ paintingJoke }} The order button unlocks when they are done.</p>
+            <p aria-live="polite" style="font-size:14px;margin:0 0 14px;opacity:0.85;">Your pictures are being taken — this can take a few minutes. {{ paintingJoke }}</p>
           </sc-if>
-          <sc-if value="{{ plateLimited }}" hint-placeholder-val="{{ false }}">
-            <p style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;font-size:14px;line-height:1.6;margin:0 0 14px;opacity:0.92;">
-              <span>The photographer is busy — your pictures are not ready yet. Try again, or place the order and we will take the missing ones ourselves.</span>
-              <button onClick="{{ onRetryPlates }}" style="border:2px solid currentColor;background:transparent;color:inherit;font-family:var(--font-heading);font-weight:800;font-size:11px;letter-spacing:0.08em;text-transform:uppercase;padding:8px 12px;cursor:pointer;">Try again</button>
+          <sc-if value="{{ platesIncomplete }}" hint-placeholder-val="{{ false }}">
+            <p role="status" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;font-size:14px;line-height:1.6;margin:0 0 14px;opacity:0.92;">
+              <span>{{ platesProblem }}</span>
+              <sc-if value="{{ platesRetry }}" hint-placeholder-val="{{ true }}">
+                <button onClick="{{ onRetryPlates }}" style="border:2px solid currentColor;background:transparent;color:inherit;font-family:var(--font-heading);font-weight:800;font-size:11px;letter-spacing:0.08em;text-transform:uppercase;padding:8px 12px;cursor:pointer;">Try the pictures again</button>
+              </sc-if>
+              <sc-if value="{{ platesRestory }}" hint-placeholder-val="{{ false }}">
+                <a href="{{ previewHref }}" onClick="{{ onRestory }}" style="text-decoration:underline;font-weight:700;">Back to the story</a>
+              </sc-if>
             </p>
           </sc-if>
           <button onClick="{{ onPlace }}" disabled="{{ placeDisabled }}" style="{{ placeStyle }}" style-hover="{{ placeHover }}">{{ placeLabel }}</button>
@@ -225,9 +230,6 @@
             <p style="font-size:17px;line-height:1.6;margin:0 0 14px;max-width:46ch;opacity:0.92;">{{ doneBlurb }}</p>
             <sc-if value="{{ platesSentAll }}" hint-placeholder-val="{{ true }}">
               <p style="font-size:14px;line-height:1.6;margin:0 0 14px;opacity:0.92;">Your photographed pictures are in the order.</p>
-            </sc-if>
-            <sc-if value="{{ platesSentSome }}" hint-placeholder-val="{{ false }}">
-              <p style="font-size:14px;line-height:1.6;margin:0 0 14px;opacity:0.92;">Some pictures are still to be taken — we will finish them ourselves before printing.</p>
             </sc-if>
             <p style="font-size:14px;letter-spacing:0.02em;margin:0;opacity:0.85;">"{{ bookTitle }}" · {{ names }}</p>
           </div>
@@ -332,6 +334,13 @@ const INSTAPAY_NUMBER = '0103 228 8434';
 
 // Shown one at a time, rotating, while the plates are being photographed --
 // same lines as Book Preview's writing-wait joke cycle.
+// What the customer is told when the pictures are not all there. The order
+// button stays locked either way; these say why and what to do about it.
+const PLATES_PROBLEM = {
+  failed: 'Some pictures could not be taken. Try again, or come back in a few minutes.',
+  story: 'The story needs to be written again.',
+};
+
 const JOKES = [
   'Teaching the dragon to spell your name...',
   'Double-checking the garden wall is scary enough...',
@@ -344,7 +353,7 @@ const JOKES = [
 class Component extends DCLogic {
   state = {
     audience: 'child', format: 1, speed: 'Standard · 5 days', gift: false,
-    placed: false, order: '', book: null, ship: {}, errors: {}, painting: false, jokeIdx: 0, plateLimited: false,
+    placed: false, order: '', book: null, ship: {}, errors: {}, painting: false, jokeIdx: 0, platesProblem: '',
     submitting: false, orderError: '',
     paymentScreenshot: null, screenshotError: '',
   };
@@ -462,17 +471,37 @@ class Component extends DCLogic {
     return b;
   }
 
+  /** Why the book cannot be ordered — the first reason that applies, so the
+   *  notice sends the customer to the one step that fixes it. null when it can. */
+  whyNotOrderable() {
+    if (this.orderableBook()) return null;
+    const b = this.state.book;
+    if (!b) return { text: 'There is no book to order yet — it looks like this page was opened on its own.', href: './Book Builder.dc.html?for=child', cta: 'Start your book' };
+    if (!(Array.isArray(b.pages) && b.pages.length > 0)) return { text: 'The story has not been written yet.', href: './Book Preview.dc.html?for=child', cta: 'Write the story' };
+    if (!b.photo || b.photoConsent !== true) return { text: 'We need a photo of them and your consent first.', href: './Book Builder.dc.html?for=child', cta: 'Add their photo', photoStep: true };
+    return { text: 'This book does not have a name in it yet, so there is nothing to print.', href: './Book Builder.dc.html?for=child', cta: 'Add their details' };
+  }
+
+  /** Every page has its picture, made for this story and this photo. The
+   *  server refuses an order without them (lib/placeOrder.js): the photo is
+   *  removed once the order is placed, so nothing missing could be taken later. */
+  platesComplete() {
+    const b = this.state.book;
+    if (!b) return false;
+    const pages = Array.isArray(b.pages) ? b.pages.length : 0;
+    const have = b.platesFor === this.platesFingerprint(b) && Array.isArray(b.plateUrls) ? b.plateUrls : [];
+    return pages > 0 && have.length === pages && have.every(Boolean);
+  }
+
   // The email is the only record of the order, so it gets the book exactly
   // as approved: generated pages with the customer's edits applied, plus the
-  // cover and whatever plates exist (nulls stay null; the owner sees
-  // "missing" and can take those pictures again).
+  // cover and every plate (the order button stays locked until they exist).
   orderBook() {
     const b = this.state.book || {};
     const edits = b.edits || {};
     const pages = (Array.isArray(b.pages) ? b.pages : []).map((p, i) => edits['child:' + i] || p);
     // plateUrls only travel if they were made for this story and art; an
-    // earlier story's pictures (gate closed, or a 429 before anything was
-    // retaken) must not ship as the approved book's. Nulls print "missing".
+    // earlier story's pictures must not ship as the approved book's.
     const plateUrls = b.platesFor === this.platesFingerprint(b) && Array.isArray(b.plateUrls)
       ? pages.map((_, i) => b.plateUrls[i] || null)
       : pages.map(() => null);
@@ -548,35 +577,45 @@ class Component extends DCLogic {
     // the image budget twice and orphan the first run's joke timer.
     if (this.state.painting) return;
     const book = this.state.book;
-    // The plates are photographs of this child, so without the photo, the
-    // parent's consent and the signed scenes there is nothing to send.
-    if (!book || !book.photo || book.photoConsent !== true || !book.scenesToken) return;
+    // The plates are photographs of this child, so without the photo and the
+    // parent's consent there is nothing to send (the notice says so).
+    if (!book || !book.photo || book.photoConsent !== true) return;
+    // Without the signed story the art routes refuse everything. Say so and
+    // send them back to the Preview, which writes it again, rather than
+    // leaving a locked button with no reason.
+    if (!book.scenesToken) { this.setState({ platesProblem: 'story' }); return; }
     const fp = this.platesFingerprint(book);
     const have = book.platesFor === fp && Array.isArray(book.plateUrls) ? book.plateUrls : [];
     const pages = Array.isArray(book.pages) ? book.pages.length : 0;
-    if (pages && have.length === pages && have.every(Boolean)) return;
-    this.setState({ painting: true, jokeIdx: 0, plateLimited: false });
+    if (pages && have.length === pages && have.every(Boolean)) { this.setState({ platesProblem: '' }); return; }
+    this.setState({ painting: true, jokeIdx: 0, platesProblem: '' });
     if (!this.reduced()) {
       this.jokeTimer = setInterval(() => this.setState({ jokeIdx: this.state.jokeIdx + 1 }), 1400);
     }
+    // However the run ends, the order button stays locked until every
+    // picture exists, and the customer is told why and what to do.
+    const finish = (urls, problem) => {
+      const done = Array.isArray(urls) && urls.length === pages && urls.every(Boolean);
+      const extra = { painting: false, platesProblem: done ? '' : (problem || 'failed') };
+      // Pictures already taken in this run were paid for: keep them, so a
+      // retry only asks for what is still missing.
+      if (Array.isArray(urls) && urls.some(Boolean)) this.savePlates(urls, fp, extra);
+      else this.setState(extra);
+    };
     let plateUrls;
     try {
       if (have.some(Boolean)) {
         // Fill the gaps one page at a time through redraw-page.
-        plateUrls = [...have];
+        plateUrls = Array.from({ length: pages }, (_, i) => have[i] || null);
         for (let i = 0; i < plateUrls.length; i++) {
           if (plateUrls[i]) continue;
           const res = await fetch('/api/redraw-page', {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ book, pageIndex: i, scenesToken: book.scenesToken }),
           });
-          if (res.status === 429) {
-            // Pictures already taken in this run were paid for: keep them,
-            // so Retry only asks for what is still missing.
-            this.savePlates(plateUrls, fp, { painting: false, plateLimited: true });
-            return;
-          }
+          if (res.status === 429) return finish(plateUrls);
           const json = await res.json().catch(() => ({}));
+          if (json.error === 'invalid_scenes') return finish(plateUrls, 'story');
           if (json.plateUrl) plateUrls[i] = json.plateUrl;
         }
       } else {
@@ -584,17 +623,13 @@ class Component extends DCLogic {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ book, scenesToken: book.scenesToken }),
         });
-        if (res.status === 429) { this.setState({ painting: false, plateLimited: true }); return; }
         const json = await res.json().catch(() => ({}));
+        if (json.error === 'invalid_scenes') return finish(null, 'story');
         plateUrls = Array.isArray(json.plateUrls) ? json.plateUrls : [];
       }
-      this.savePlates(plateUrls, fp, { painting: false });
+      finish(plateUrls);
     } catch (e) {
-      // Degrade quietly for anything other than the 429 case above: the order
-      // can still be placed, missing slots print as "missing" in the email
-      // and the owner retakes those pictures. Keep any partial progress.
-      if (Array.isArray(plateUrls) && plateUrls.some(Boolean)) this.savePlates(plateUrls, fp, { painting: false });
-      else this.setState({ painting: false });
+      finish(plateUrls);
     } finally {
       if (this.jokeTimer) { clearInterval(this.jokeTimer); this.jokeTimer = null; }
     }
@@ -778,12 +813,20 @@ class Component extends DCLogic {
       onRemoveScreenshot: () => this.setState({ paymentScreenshot: null, screenshotError: '' }),
 
       noBook: !this.orderableBook(),
-      placeDisabled: !this.orderableBook() || this.state.submitting || !!this.state.painting || !this.state.paymentScreenshot,
-      noBookReason: this.state.book
-        ? 'This book does not have a name in it yet, so there is nothing to print.'
-        : 'There is no book to order yet — it looks like this page was opened on its own.',
-      noBookHref: './Book Builder.dc.html?for=' + a,
-      noBookCta: this.state.book ? 'Add their details' : 'Start your book',
+      placeDisabled: !this.orderableBook() || !this.platesComplete() || this.state.submitting || !!this.state.painting || !this.state.paymentScreenshot,
+      noBookReason: (this.whyNotOrderable() || {}).text || '',
+      noBookHref: (this.whyNotOrderable() || {}).href || './Book Builder.dc.html?for=' + a,
+      noBookCta: (this.whyNotOrderable() || {}).cta || '',
+      onNoBookLink: () => {
+        // Like the Preview's bounce: the Builder restores the saved step, so
+        // pin it to the photo step (2) or they land somewhere with no photo prompt.
+        const why = this.whyNotOrderable();
+        if (!why || !why.photoStep) return;
+        try {
+          const saved = JSON.parse(localStorage.getItem('farsh.book') || 'null');
+          if (saved) localStorage.setItem('farsh.book', JSON.stringify({ ...saved, step: 2 }));
+        } catch (e) {}
+      },
       placeStyle: {
         background: this.orderableBook() ? 'var(--color-cta)' : 'var(--color-neutral-400)',
         color: 'var(--color-bg)',
@@ -803,6 +846,7 @@ class Component extends DCLogic {
         // book to print, but the form still rendered and still issued an order
         // number. Never confirm an order for a book that does not exist.
         if (!this.orderableBook()) return;
+        if (!this.platesComplete()) return;       // the server refuses it too
         if (this.state.submitting) return;         // no double submit
         if (!this.state.paymentScreenshot) return; // button is disabled for this too; belt and braces
         const errors = this.validateShip();
@@ -863,10 +907,21 @@ class Component extends DCLogic {
       orderNo: this.state.order || 'FA-0000',
       painting: !!this.state.painting,
       paintingJoke: JOKES[this.state.jokeIdx % JOKES.length],
-      plateLimited: !!this.state.plateLimited,
+      platesIncomplete: !!this.orderableBook() && !this.state.painting && !!this.state.platesProblem && !this.platesComplete(),
+      platesProblem: PLATES_PROBLEM[this.state.platesProblem] || '',
+      platesRetry: this.state.platesProblem === 'failed',
+      platesRestory: this.state.platesProblem === 'story',
       platesSentAll: !!this.state.platesSentAll,
-      platesSentSome: !this.state.platesSentAll,
       onRetryPlates: () => this.paintPlates(),
+      onRestory: () => {
+        // The Preview only writes the story again when it looks stale, and a
+        // missing or refused token is not something it can see. Clear the
+        // marker so it does, with a fresh signed token.
+        try {
+          const saved = JSON.parse(localStorage.getItem('farsh.book') || 'null');
+          if (saved) localStorage.setItem('farsh.book', JSON.stringify({ ...saved, pagesFor: null }));
+        } catch (e) {}
+      },
       doneStyle: {
         background: t.doneBg, color: a === 'family' ? '#f2f7e6' : '#fff2eb',
         padding: 'clamp(36px,4.6vw,80px) clamp(20px,3vw,44px)',

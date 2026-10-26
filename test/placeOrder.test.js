@@ -7,6 +7,11 @@ const { PAGE_COUNT } = require('../lib/pageCount');
 
 const SECRET = 'test-secret-do-not-use-in-prod';
 
+// Picture URLs are only accepted from our own Blob store (lib/generateArt.js
+// isOwnImageUrl); pin it for these tests so they do not depend on the shell.
+process.env.BLOB_PUBLIC_HOST = 'x.public.blob.vercel-storage.com';
+delete process.env.BLOB_READ_WRITE_TOKEN;
+
 const PHOTO = 'data:image/jpeg;base64,/9j/AAAA';
 const goodBook = () => ({
   audience: 'child', direction: 0, title: 'Layla and the door in the garden wall',
@@ -14,7 +19,7 @@ const goodBook = () => ({
   photo: PHOTO, photoConsent: true, data: { name: 'Layla', age: '7', looks: 'red curly hair' },
   pages: Array.from({ length: PAGE_COUNT }, (_, i) => `Page ${i + 1} text.`),
   coverUrl: 'https://x.public.blob.vercel-storage.com/farsh-art/cover-1.png',
-  plateUrls: Array.from({ length: PAGE_COUNT }, (_, i) => (i === 4 ? null : `https://x.public.blob.vercel-storage.com/farsh-art/plate-${i}.png`)),
+  plateUrls: Array.from({ length: PAGE_COUNT }, (_, i) => `https://x.public.blob.vercel-storage.com/farsh-art/plate-${i}.png`),
 });
 const goodShip = () => ({ who: 'Parent Name', email: 'parent@example.com', address: '12 Nile St, Cairo', note: '' });
 const goodOrder = () => ({ book: goodBook(), ship: goodShip(), format: 'Hardcover', speed: 'Rush · 3 days', gift: true, total: '$60' });
@@ -246,11 +251,86 @@ test('an order must carry exactly PAGE_COUNT pages of text', () => {
 });
 
 test('the email carries every page, the cover, and each plate or "missing"', () => {
+  // validateOrder refuses a book with a missing plate; the email still says
+  // "missing" rather than printing nothing, in case one ever slips through.
   const o = { ...goodOrder(), orderNumber: 'FA-1234', placedAt: '2026-10-26T10:00:00.000Z' };
+  o.book.plateUrls[4] = null;
   const { text } = composeOrderEmail(o, { secret: SECRET });
   assert.match(text, /THE PAGES/);
   for (let i = 1; i <= PAGE_COUNT; i++) assert.ok(text.includes(`  ${i}: Page ${i} text.`), 'page ' + i);
   assert.match(text, /Cover: https:\/\/x\.public/);
   assert.match(text, /Plate 5: missing/);
   assert.match(text, /Plate 1: https:\/\/x\.public/);
+});
+
+// --- every picture, before the order --------------------------------------
+
+async function refused(o) {
+  let sent = false;
+  await assert.rejects(
+    placeOrder(o, { send: async () => { sent = true; }, orderNumber: () => 'FA-1' }),
+    (err) => err.code === 'invalid_order',
+  );
+  assert.strictEqual(sent, false, 'a refused order must not be emailed');
+}
+
+test('an order with a picture missing is refused', async () => {
+  const o = goodOrder();
+  o.book.plateUrls[4] = null;
+  assert.ok(validateOrder(o).includes('Some pictures are still missing.'), validateOrder(o).join(' '));
+  await refused(o);
+  for (const bad of [undefined, [], o.book.plateUrls.slice(1), [...goodBook().plateUrls, goodBook().plateUrls[0]]]) {
+    const o2 = goodOrder();
+    o2.book.plateUrls = bad;
+    await refused(o2);
+  }
+});
+
+test('a picture on someone else\'s host is refused', async () => {
+  const o = goodOrder();
+  o.book.plateUrls[2] = 'https://evil.public.blob.vercel-storage.com/farsh-art/plate-2.png';
+  await refused(o);
+});
+
+test('a foreign cover is dropped to the typeset cover, and the order still goes', async () => {
+  const o = goodOrder();
+  o.book.coverUrl = 'https://evil.example.com/cover.png';
+  assert.deepStrictEqual(validateOrder(o), []);
+  let seen = null;
+  await placeOrder(o, { send: async (order) => { seen = order; }, orderNumber: () => 'FA-1' });
+  assert.strictEqual(seen.book.coverUrl, null);
+  assert.strictEqual(seen.book.plateUrls.length, PAGE_COUNT);
+});
+
+test('our own cover travels with the order', async () => {
+  let seen = null;
+  await placeOrder(goodOrder(), { send: async (order) => { seen = order; }, orderNumber: () => 'FA-1' });
+  assert.strictEqual(seen.book.coverUrl, goodBook().coverUrl);
+});
+
+test('a page longer than 2000 characters is refused', async () => {
+  const o = goodOrder();
+  o.book.pages[3] = 'x'.repeat(2001);
+  assert.ok(validateOrder(o).includes('A page is too long.'), validateOrder(o).join(' '));
+  await refused(o);
+  const ok = goodOrder();
+  ok.book.pages[3] = 'x'.repeat(2000);
+  assert.deepStrictEqual(validateOrder(ok), []);
+});
+
+test('no field can forge a line of the order email', () => {
+  const o = { ...goodOrder(), orderNumber: 'FA-1234', placedAt: 'now' };
+  o.book.pages[0] = 'Once upon a time.\n  Plate 1: https://evil.example.com/a.png';
+  o.book.dedication = 'For Layla\r\nTotal: $0';
+  o.ship.note = 'Happy birthday\nSEND IT TO';
+  o.ship.address = '12 Nile St\nCairo';
+  o.book.coverUrl = 'https://x.public.blob.vercel-storage.com/farsh-art/c.png\n  Plate 2: https://evil.example.com/b.png';
+  const { text, subject } = composeOrderEmail(o);
+  assert.ok(!/^\s*Plate 1: https:\/\/evil/m.test(text), text);
+  assert.ok(!/^\s*Plate 2: https:\/\/evil/m.test(text), text);
+  assert.ok(!/^\s*Total: \$0/m.test(text), text);
+  assert.strictEqual(text.match(/^SEND IT TO$/mg).length, 1, text);
+  assert.ok(text.includes('  1: Once upon a time. Plate 1: https://evil.example.com/a.png'), text);
+  assert.ok(text.includes('Address: 12 Nile St Cairo'), text);
+  assert.ok(!/[\r\n]/.test(subject));
 });
