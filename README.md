@@ -39,14 +39,24 @@ read from `.env` once at startup.
 
 Three endpoints paint the art: `POST /api/generate-cover`,
 `POST /api/generate-plates` (after Checkout), and `POST /api/redraw-page`.
-The child's photo is required. It is EXIF-stripped and sent as the reference image for the cover and for every page; the cover is sent as a second reference for the pages so clothes stay consistent. Pages are generated three at a time with a 60-second limit each, so a plates request can take a few minutes. Scenes are signed by /api/generate-book (ORDER_CONFIRM_SECRET), so the plate endpoints cannot be used to illustrate arbitrary text.
+The child's photo is required. It is EXIF-stripped and sent as the reference
+image for the cover and for every page; the cover is sent as a second
+reference for the pages so clothes stay consistent. Pages are generated three
+at a time with a 60-second limit each, so a plates request can take a few
+minutes. Scenes are signed by /api/generate-book (ORDER_CONFIRM_SECRET), so the
+plate endpoints cannot be used to illustrate arbitrary text.
+
+Without `GEMINI_API_KEY`, or on any Gemini failure or safety refusal, all three
+endpoints return null URLs and the stock typographic art stays put; a null page
+can be redrawn from Preview. `GEMINI_API_KEY` is required for art; Vercel
+deploys also need `BLOB_READ_WRITE_TOKEN` (locally: `uploads/generated/`).
 
 ## Project layout
 
 ```
 server.js              Express server: static files + the story/art API routes + rate limiting
 lib/generateBook.js     Builds the prompt, calls Claude, returns eleven page texts
-lib/generateArt.js      Gemini image pipeline: character sheet -> cover -> plates
+lib/generateArt.js      Gemini image pipeline: photo -> cover -> plates, three at a time
 lib/artPrompts.js       Photorealistic, identity-preserving prompt builders
 lib/pageCount.js        The number of story pages
 lib/scenesToken.js      Signs the scene lines between writer and illustrator
