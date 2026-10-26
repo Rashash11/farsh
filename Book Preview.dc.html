@@ -142,6 +142,9 @@
         </sc-if>
       </div>
     </div>
+    <sc-if value="{{ redrawErrorView }}" hint-placeholder-val="{{ false }}">
+      <div role="alert" style="font-size:11px;letter-spacing:0.02em;color:rgba(240,230,211,0.8);margin-top:10px;text-align:right;">{{ redrawErrorMessage }}</div>
+    </sc-if>
     <div style="font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:rgba(240,230,211,0.6);text-align:center;margin-top:8px;">Final pictures are photographed after you approve</div>
 
     <sc-if value="{{ editing }}" hint-placeholder-val="{{ false }}">
@@ -240,7 +243,7 @@ function possessive(name) {
 }
 
 class Component extends DCLogic {
-  state = { audience: 'child', page: 0, editing: false, draft: '', edits: {}, book: null, generating: false, genError: null, jokeIdx: 0, paintingCover: false, redrawing: false };
+  state = { audience: 'child', page: 0, editing: false, draft: '', edits: {}, book: null, generating: false, genError: null, jokeIdx: 0, paintingCover: false, redrawing: false, redrawError: null };
 
   // Single writer for `book`: always merges over the LATEST this.state.book
   // at write time (not a stale local var captured before an await), so two
@@ -266,6 +269,10 @@ class Component extends DCLogic {
     // photographed from. Send it back to the Builder's photo step rather
     // than paying for a cover that cannot look like the child.
     if (book && (!book.photo || book.photoConsent !== true)) {
+      // The Builder restores the saved step, and a legacy book may have been
+      // saved at a later one with no photo prompt on it. Pin it to the photo
+      // step (2) so the bounce lands where the photo can actually be added.
+      try { localStorage.setItem('farsh.book', JSON.stringify({ ...book, step: 2 })); } catch (e) {}
       location.replace('./Book Builder.dc.html?for=child');
       return;
     }
@@ -423,7 +430,10 @@ class Component extends DCLogic {
       if (!res.ok || !Array.isArray(json.pages)) {
         throw new Error((json && json.message) || 'We could not write the book just now.');
       }
-      this.patchBook({ pages: json.pages, scenes: Array.isArray(json.scenes) ? json.scenes : [], scenesToken: json.scenesToken || null, pagesFor: fp });
+      this.patchBook({ pages: json.pages, scenes: Array.isArray(json.scenes) ? json.scenes : [], scenesToken: json.scenesToken || null, pagesFor: fp, edits: {} });
+      // Edits are keyed by page index, so they belong to the story they were
+      // made on. A rewritten story must not inherit an old page 3 edit.
+      this.setState({ edits: {} });
       this.setState({ generating: false, genError: null });
     } catch (e) {
       this.setState({ generating: false, genError: (e && e.message) || 'We could not write the book just now.' });
@@ -527,7 +537,7 @@ class Component extends DCLogic {
     const genPages = (this.state.book && Array.isArray(this.state.book.pages)) ? this.state.book.pages : null;
     const gen = (this.state.book && Array.isArray(this.state.book.plateUrls)) ? this.state.book.plateUrls : [];
     const base = sets[a] || sets.child;
-    const count = genPages ? genPages.length : base.length;
+    const count = genPages && genPages.length ? genPages.length : base.length;
     return Array.from({ length: count }, (_, i) => {
       const s = base[i] || base[base.length - 1];
       return {
@@ -546,7 +556,11 @@ class Component extends DCLogic {
   async redrawPage() {
     const book = this.state.book, i = this.state.page;
     if (!book || this.state.redrawing) return;
-    this.setState({ redrawing: true });
+    this.setState({ redrawing: true, redrawError: null });
+    // Say so when a picture cannot be retaken: a button that silently comes
+    // back looks like it did nothing. The server's message is already safe
+    // for customers; anything else gets the generic line.
+    const fail = (message) => this.setState({ redrawing: false, redrawError: { page: i, message: message || 'That picture could not be taken again. Please try once more.' } });
     try {
       const res = await fetch('/api/redraw-page', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -560,8 +574,8 @@ class Component extends DCLogic {
         this.paintBook();
         return;
       }
-      this.setState({ redrawing: false });
-    } catch (e) { this.setState({ redrawing: false }); }
+      fail(json && typeof json.message === 'string' ? json.message : '');
+    } catch (e) { fail(''); }
   }
 
   // ---- Page-flip book engine (adapted from Hank-D-Tank/x-book, GSAP) ----
@@ -589,7 +603,7 @@ class Component extends DCLogic {
         '<p style="font-size:clamp(11px,1.1vw,14px);line-height:1.4;margin:0;color:var(--color-accent-700);">' + this.esc(joke) + '</p>'
       : '<p style="font-family:var(--font-heading);font-weight:400;font-size:' + size + ';line-height:1.35;letter-spacing:-0.02em;margin:0;color:var(--color-text);">' + this.esc(s.text) + '</p>';
     return '<div class="xb-pg xb-pg-text">' +
-      '<div style="font-size:clamp(9px,1vw,11px);letter-spacing:0.18em;text-transform:uppercase;color:var(--color-accent-700);">' + 'Page ' + (i + 1) + '</div>' +
+      '<div style="font-size:clamp(9px,1vw,11px);letter-spacing:0.18em;text-transform:uppercase;color:var(--color-accent-700);">Page ' + (((i % list.length + list.length) % list.length) + 1) + '</div>' +
       body +
       '<div style="font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--color-neutral-600);text-align:right;">Page ' + (((i % list.length + list.length) % list.length) + 1) + ' of ' + list.length + '</div>' +
     '</div>';
@@ -773,6 +787,8 @@ class Component extends DCLogic {
       },
 
       hasGeneratedPlate: !!(this.state.book && this.state.book.plateUrls && this.state.book.plateUrls[this.state.page]),
+      redrawErrorView: !!(this.state.redrawError && this.state.redrawError.page === this.state.page),
+      redrawErrorMessage: (this.state.redrawError && this.state.redrawError.message) || '',
       onRedraw: () => this.redrawPage(),
       redrawLabel: this.state.redrawing ? 'Taking it again…' : 'Take this picture again',
 
