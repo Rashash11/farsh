@@ -51,7 +51,7 @@ The child's photo and the parent's consent are required. The photo is
 EXIF-stripped and sent as the reference image for the cover and for every
 page; the cover is sent as a second reference for the pages so clothes stay
 consistent. Pages are generated three at a time with a 60-second limit each,
-so a plates request can take a few minutes; no new page starts after four
+so a plates request can take a few minutes; no new page starts after about two and a half
 minutes, to keep the request (and the pictures already taken) inside Vercel's
 300-second limit.
 Every field that reaches the image model (scenes, looks, age, title,

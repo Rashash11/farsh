@@ -919,7 +919,7 @@ class Component extends DCLogic {
         // marker so it does, with a fresh signed token.
         try {
           const saved = JSON.parse(localStorage.getItem('farsh.book') || 'null');
-          if (saved) localStorage.setItem('farsh.book', JSON.stringify({ ...saved, pagesFor: null }));
+          if (saved) localStorage.setItem('farsh.book', JSON.stringify({ ...saved, pagesFor: null, plateUrls: null, platesFor: null }));
         } catch (e) {}
       },
       doneStyle: {

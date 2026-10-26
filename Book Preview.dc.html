@@ -491,7 +491,9 @@ class Component extends DCLogic {
         // server that cannot sign at all never loops.
         this.restoryTried = true;
         this.setState({ paintingCover: false });
-        const stale = this.patchBook({ pagesFor: null });
+        // A rewritten story has new scenes, so pictures taken for the old one must
+        // not be kept and mixed in by the gap-fill at Checkout.
+        const stale = this.patchBook({ pagesFor: null, plateUrls: null, platesFor: null });
         await this.generate(stale, this.fingerprint(stale));
         const fresh = this.state.book;
         if (fresh && fresh.pagesFor && fresh.scenesToken) await this.generateArt(fresh, this.artFingerprint(fresh));
