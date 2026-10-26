@@ -37,19 +37,35 @@ read from `.env` once at startup.
 
 ## Illustrations
 
-Three endpoints paint the art: `POST /api/generate-cover`,
-`POST /api/generate-plates` (after Checkout), and `POST /api/redraw-page`.
-The child's photo is required. It is EXIF-stripped and sent as the reference
-image for the cover and for every page; the cover is sent as a second
-reference for the pages so clothes stay consistent. Pages are generated three
-at a time with a 60-second limit each, so a plates request can take a few
-minutes. Scenes are signed by /api/generate-book (ORDER_CONFIRM_SECRET), so the
-plate endpoints cannot be used to illustrate arbitrary text.
+Three endpoints take the pictures: `POST /api/generate-cover` (on Preview,
+once the story is written), `POST /api/generate-plates` and
+`POST /api/redraw-page`. The pages are taken on Checkout when the page loads,
+before the order is sent, and the order is refused (in the browser and again
+in `lib/placeOrder.js`) until every picture exists: the child's photo is
+removed after the order, so nothing missing could be taken later. A picture
+that failed can be retried from Checkout ("Try the pictures again"). The cover
+may fall back to the typeset cover; that is honest stock content and does not
+block the order.
 
-Without `GEMINI_API_KEY`, or on any Gemini failure or safety refusal, all three
-endpoints return null URLs and the stock typographic art stays put; a null page
-can be redrawn from Preview. `GEMINI_API_KEY` is required for art; Vercel
-deploys also need `BLOB_READ_WRITE_TOKEN` (locally: `uploads/generated/`).
+The child's photo and the parent's consent are required. The photo is
+EXIF-stripped and sent as the reference image for the cover and for every
+page; the cover is sent as a second reference for the pages so clothes stay
+consistent. Pages are generated three at a time with a 60-second limit each,
+so a plates request can take a few minutes; no new page starts after four
+minutes, to keep the request (and the pictures already taken) inside Vercel's
+300-second limit.
+Every field that reaches the image model (scenes, looks, age, title,
+direction) is signed by /api/generate-book (`ORDER_CONFIRM_SECRET`), so the
+art routes only illustrate stories we wrote.
+
+Without `GEMINI_API_KEY`, or on any Gemini failure or safety refusal, the
+endpoints return null URLs: the stock typographic cover stays put, and
+Checkout keeps the order button locked and offers a retry. Each failed attempt
+is logged as `[art] ...` with the model, HTTP status and Google's message.
+`GEMINI_API_KEY` is required for art; Vercel deploys also need
+`BLOB_READ_WRITE_TOKEN` (locally: `uploads/generated/`). Only pictures on your
+own Blob store, under `farsh-art/`, are accepted as ours: the host is taken
+from `BLOB_PUBLIC_HOST`, or derived from the token when that is unset.
 
 ## Project layout
 
