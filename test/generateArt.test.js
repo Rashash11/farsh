@@ -281,3 +281,24 @@ test('a log that cannot be written never breaks the call', async () => {
     assert.strictEqual(r.coverUrl, null);
   } finally { console.error = saved; }
 });
+
+test('plates: with a deadline of 0 nothing starts and every slot is null', async () => {
+  const fetchFn = okFetch();
+  const r = await generatePlates({ ...child, scenes }, { fetchFn, saveFn: fakeSave, deadlineMs: 0 });
+  assert.strictEqual(r.plateUrls.length, PAGE_COUNT);
+  assert.ok(r.plateUrls.every((u) => u === null));
+  assert.strictEqual(fetchFn.seen.length, 0);
+});
+
+test('plates: once the deadline passes no new slot starts, and running ones finish', async () => {
+  const slow = async () => {
+    await new Promise((r) => setTimeout(r, 80));
+    return { ok: true, status: 200, json: async () => okBody() };
+  };
+  let calls = 0;
+  const fetchFn = async (...a) => { calls++; return slow(...a); };
+  const r = await generatePlates({ ...child, scenes }, { fetchFn, saveFn: fakeSave, concurrency: 3, deadlineMs: 30 });
+  assert.strictEqual(r.plateUrls.length, PAGE_COUNT);
+  assert.strictEqual(calls, 3);
+  r.plateUrls.forEach((u, i) => (i < 3 ? assert.ok(u, 'slot ' + i) : assert.strictEqual(u, null, 'slot ' + i)));
+});
