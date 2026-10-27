@@ -47,6 +47,6 @@ async function handler(req, res) {
 };
 
 module.exports = handler;
-// One Gemini call, but it shares the 300s budget with the plates route so a
+// One image call, but it shares the 300s budget with the plates route so a
 // slow retry is not cut off.
 module.exports.config = { maxDuration: 300 };

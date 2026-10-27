@@ -1,10 +1,11 @@
 const test = require('node:test');
 const assert = require('node:assert');
 
-// genImage requires GEMINI_API_KEY to be set before it will call fetchFn at
+// genImage requires OPENAI_API_KEY to be set before it will call fetchFn at
 // all. These tests inject fetchFn as a full mock, so the key's value is
 // irrelevant — but its presence is required to reach the mock.
-process.env.GEMINI_API_KEY = process.env.GEMINI_API_KEY || 'test-key';
+process.env.OPENAI_API_KEY = 'test-key';
+delete process.env.OPENAI_IMAGE_MODEL;
 
 const { generateCoverArt, generatePlates, redrawPlate, isOwnImageUrl } = require('../lib/generateArt');
 
@@ -25,16 +26,28 @@ const PNG_B64 =
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
 const PHOTO = 'data:image/png;base64,' + PNG_B64;
 
-const okBody = () => ({ candidates: [{ content: { parts: [{ inlineData: { mimeType: 'image/png', data: PNG_B64 } }] } }] });
+const okBody = () => ({ created: 0, data: [{ b64_json: PNG_B64 }] });
+
+// A moderation refusal is a 400 with a stable error code, unlike a
+// transport failure; see the no-retry test below.
+const refusal = () => ({
+  ok: false, status: 400,
+  text: async () => JSON.stringify({ error: { code: 'moderation_blocked', type: 'invalid_request_error', message: 'Your request was rejected by the safety system.' } }),
+});
 
 function okFetch() {
   const seen = [];
+  const calls = [];
   const fn = async (url, opts) => {
     seen.push(JSON.parse(opts.body));
+    calls.push({ url, headers: opts.headers });
     return { ok: true, status: 200, json: async () => okBody() };
   };
-  return Object.assign(fn, { seen });
+  return Object.assign(fn, { seen, calls });
 }
+// The reference images and the prompt, as the request carries them.
+const refsOf = (body) => body.images.map((i) => i.image_url);
+const promptOf = (body) => body.prompt;
 
 async function fakeSave(name) { return '/uploads/generated/' + name; }
 
@@ -55,9 +68,33 @@ test('cover is generated from the photo as the first reference part', async () =
   assert.ok(r.coverUrl.startsWith('/uploads/generated/cover-'));
   assert.strictEqual(r.usedPhoto, true);
   assert.strictEqual(fetchFn.seen.length, 1);
-  const parts = fetchFn.seen[0].contents[0].parts;
-  assert.ok(parts[0].inline_data, 'photo must be the first part');
-  assert.strictEqual(parts[parts.length - 1].text.includes('attached photograph'), true);
+  const body = fetchFn.seen[0];
+  assert.match(refsOf(body)[0], /^data:image\/png;base64,/, 'photo must be the first reference');
+  assert.ok(promptOf(body).includes('attached photograph'));
+});
+
+test('the call goes to the OpenAI edit endpoint with the bearer key, the model, and a portrait cover', async () => {
+  const fetchFn = okFetch();
+  await generateCoverArt(child, { fetchFn, saveFn: fakeSave });
+  const { url, headers } = fetchFn.calls[0];
+  assert.strictEqual(url, 'https://api.openai.com/v1/images/edits');
+  assert.strictEqual(headers.Authorization, 'Bearer test-key');
+  assert.ok(!url.includes('test-key'), 'the key never rides in the URL');
+  const body = fetchFn.seen[0];
+  assert.strictEqual(body.model, 'gpt-image-2.5-sunburst');
+  assert.strictEqual(body.size, '1152x1536');
+  assert.strictEqual(body.quality, 'high');
+  assert.strictEqual(body.output_format, 'png');
+  assert.strictEqual(body.n, 1);
+});
+
+test('OPENAI_IMAGE_MODEL overrides the model', async () => {
+  process.env.OPENAI_IMAGE_MODEL = 'gpt-image-1.5';
+  try {
+    const fetchFn = okFetch();
+    await generateCoverArt(child, { fetchFn, saveFn: fakeSave });
+    assert.strictEqual(fetchFn.seen[0].model, 'gpt-image-1.5');
+  } finally { delete process.env.OPENAI_IMAGE_MODEL; }
 });
 
 test('cover without a photo is not attempted', async () => {
@@ -67,10 +104,20 @@ test('cover without a photo is not attempted', async () => {
   assert.strictEqual(fetchFn.seen.length, 0);
 });
 
-test('a refused cover yields null and never throws', async () => {
-  const fetchFn = async () => ({ ok: true, status: 200, json: async () => ({ candidates: [{ finishReason: 'IMAGE_SAFETY', content: { parts: [] } }] }) });
+test('a refused cover yields null, never throws, and is not retried', async () => {
+  let calls = 0;
+  const fetchFn = async () => { calls++; return refusal(); };
   const r = await generateCoverArt(child, { fetchFn, saveFn: fakeSave });
   assert.strictEqual(r.coverUrl, null);
+  assert.strictEqual(calls, 1, 'a moderation refusal is deterministic; retrying it spends money on the same answer');
+});
+
+test('an answer with no image is null and not retried', async () => {
+  let calls = 0;
+  const fetchFn = async () => { calls++; return { ok: true, status: 200, json: async () => ({ data: [] }) }; };
+  const r = await generateCoverArt(child, { fetchFn, saveFn: fakeSave });
+  assert.strictEqual(r.coverUrl, null);
+  assert.strictEqual(calls, 1);
 });
 
 test('plates: PAGE_COUNT slots, photo first, each scene clamped into its own prompt', async () => {
@@ -81,10 +128,11 @@ test('plates: PAGE_COUNT slots, photo first, each scene clamped into its own pro
   r.plateUrls.forEach((u, i) => assert.match(u, new RegExp('plate-' + i + '-')));
   assert.strictEqual(fetchFn.seen.length, PAGE_COUNT);
   for (let i = 0; i < PAGE_COUNT; i++) {
-    assert.ok(fetchFn.seen[i].contents[0].parts[0].inline_data, 'photo first on plate ' + i);
+    assert.match(refsOf(fetchFn.seen[i])[0], /^data:image\/png;base64,/, 'photo first on plate ' + i);
+    assert.strictEqual(fetchFn.seen[i].size, '1024x1024', 'plates are square');
   }
   // Calls run concurrently, so check scenes by membership rather than by position.
-  const texts = fetchFn.seen.map((b) => b.contents[0].parts.at(-1).text);
+  const texts = fetchFn.seen.map(promptOf);
   for (let i = 0; i < PAGE_COUNT; i++) assert.ok(texts.some((t) => t.includes('scene ' + i)), 'missing scene ' + i);
 });
 
@@ -98,7 +146,7 @@ test('plates without a photo are all null and make no calls', async () => {
 test('a failed slot is null, the others still succeed', async () => {
   // Fail every attempt (including the retry) for scene 4 only.
   const fetchFn = async (url, opts) => {
-    if (JSON.parse(opts.body).contents[0].parts.at(-1).text.includes('scene 4')) {
+    if (promptOf(JSON.parse(opts.body)).includes('scene 4')) {
       return { ok: false, status: 500, json: async () => ({}) };
     }
     return { ok: true, status: 200, json: async () => okBody() };
@@ -161,14 +209,15 @@ test('the cover is attached as a second reference only when it is our own URL', 
   const own = okFetch();
   await generatePlates({ ...child, scenes, coverUrl: `https://${OUR_HOST}/farsh-art/cover-1.png` },
     { fetchFn: own, saveFn: fakeSave, fetchImage: async () => Buffer.from(PNG_B64, 'base64') });
-  assert.strictEqual(own.seen[0].contents[0].parts.filter((p) => p.inline_data).length, 2);
+  assert.strictEqual(refsOf(own.seen[0]).length, 2);
+  assert.match(refsOf(own.seen[0])[1], /^data:image\/png;base64,/);
 
   const foreign = okFetch();
   let fetched = 0;
   await generatePlates({ ...child, scenes, coverUrl: 'https://evil.example.com/x.png' },
     { fetchFn: foreign, saveFn: fakeSave, fetchImage: async () => { fetched++; return Buffer.from(PNG_B64, 'base64'); } });
   assert.strictEqual(fetched, 0, 'must not fetch a foreign URL');
-  assert.strictEqual(foreign.seen[0].contents[0].parts.filter((p) => p.inline_data).length, 1);
+  assert.strictEqual(refsOf(foreign.seen[0]).length, 1);
 }));
 
 test('isOwnImageUrl accepts local generated paths and our pinned Blob host, nothing else', () => withBlobEnv({ BLOB_PUBLIC_HOST: OUR_HOST }, () => {
@@ -210,7 +259,7 @@ test('redrawPlate clamps the index to the last page', async () => {
   const fetchFn = okFetch();
   const r = await redrawPlate({ ...child, scenes }, 99, { fetchFn, saveFn: fakeSave });
   assert.ok(r.plateUrl.startsWith('/uploads/generated/plate-' + (PAGE_COUNT - 1) + '-'));
-  assert.ok(fetchFn.seen[0].contents[0].parts.at(-1).text.includes('scene ' + (PAGE_COUNT - 1)));
+  assert.ok(promptOf(fetchFn.seen[0]).includes('scene ' + (PAGE_COUNT - 1)));
 });
 
 test('a throwing saveFn degrades that slot to null, never throws', async () => {
@@ -232,7 +281,7 @@ test('a malformed book never throws and still yields PAGE_COUNT slots', async ()
 test('a rejected call is logged for the operator with model, status and the API message', async () => {
   const fetchFn = async () => ({
     ok: false, status: 400,
-    text: async () => JSON.stringify({ error: { code: 400, message: 'API key not valid. Please pass a valid API key.' } }),
+    text: async () => JSON.stringify({ error: { code: 'invalid_api_key', message: 'Incorrect API key provided.' } }),
   });
   let r;
   const lines = await captureErrors(async () => { r = await generateCoverArt(child, { fetchFn, saveFn: fakeSave }); });
@@ -240,9 +289,9 @@ test('a rejected call is logged for the operator with model, status and the API 
   assert.strictEqual(lines.length, 2, 'one line per failed attempt: ' + lines.join(' | '));
   for (const l of lines) {
     assert.match(l, /^\[art\] /);
-    assert.match(l, /gemini-2\.5-flash-image/);
+    assert.match(l, /gpt-image-2\.5-sunburst/);
     assert.match(l, /400/);
-    assert.match(l, /API key not valid/);
+    assert.match(l, /Incorrect API key/);
     assert.ok(!/test-key/.test(l), 'the key must never be logged');
   }
 });
@@ -254,13 +303,10 @@ test('a long error body is capped in the log', async () => {
   for (const l of lines) assert.ok(l.length < 400, 'line was ' + l.length + ' chars');
 });
 
-test('a refusal logs its finishReason or blockReason', async () => {
-  const finish = async () => ({ ok: true, status: 200, json: async () => ({ candidates: [{ finishReason: 'IMAGE_SAFETY', content: { parts: [] } }] }) });
-  const blocked = async () => ({ ok: true, status: 200, json: async () => ({ promptFeedback: { blockReason: 'PROHIBITED_CONTENT' } }) });
-  const a = await captureErrors(() => generateCoverArt(child, { fetchFn: finish, saveFn: fakeSave }));
-  const b = await captureErrors(() => generateCoverArt(child, { fetchFn: blocked, saveFn: fakeSave }));
-  assert.ok(a.some((l) => /\[art\].*IMAGE_SAFETY/.test(l)), a.join(' | '));
-  assert.ok(b.some((l) => /\[art\].*PROHIBITED_CONTENT/.test(l)), b.join(' | '));
+test('a refusal logs its error code and the safety message', async () => {
+  const a = await captureErrors(() => generateCoverArt(child, { fetchFn: async () => refusal(), saveFn: fakeSave }));
+  assert.strictEqual(a.length, 1, a.join(' | '));
+  assert.match(a[0], /\[art\].*refused.*moderation_blocked.*safety system/);
 });
 
 test('a thrown or aborted call logs the error name and message', async () => {

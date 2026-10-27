@@ -5,7 +5,7 @@ pages + a small Node API for AI story text and illustrations. Real orders ship.
 
 ## Tech stack
 - Node >= 18, CommonJS, Express 5 (`server.js`) — no framework, no build step
-- Anthropic SDK (story text), Gemini REST (illustrations), Resend (order email)
+- Anthropic SDK (story text), OpenAI image edits REST (illustrations), Resend (order email)
 - `@vercel/blob` for generated art in production; `uploads/generated/` locally
 - Tests: `node --test`, no test framework or mocking library
 
@@ -37,7 +37,7 @@ docs/           Design notes; REVIEW-master.md is a prior audit
 - **Bound anything that reaches a paid model.** See `LIMITS` in
   `lib/generateBook.js` — rate limits cap request count, not prompt cost.
 - **Degrade to the stock content, never to a lie.** Missing `ANTHROPIC_API_KEY`
-  or `GEMINI_API_KEY` → sample story / typographic art. But a failed order must
+  or `OPENAI_API_KEY` → sample story / typographic art. But a failed order must
   fail loudly: the email *is* the order record, so `placeOrder` resolves only
   after Resend accepts it.
 - **Customer-facing `message` never carries setup instructions or internals.**

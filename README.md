@@ -31,7 +31,7 @@ read from `.env` once at startup.
   order server-side, emails the full order to `ORDER_EMAIL_TO` via Resend,
   and only then returns a real order number — that email *is* the order
   record. No card is ever charged; no payment processing is wired up.
-- **Cover and page art** is real too, when `GEMINI_API_KEY` is set — see
+- **Cover and page art** is real too, when `OPENAI_API_KEY` is set — see
   "Illustrations" below. Without a key, covers and pages show the original
   typographic art, same silent fallback as story generation.
 
@@ -50,19 +50,19 @@ block the order.
 The child's photo and the parent's consent are required. The photo is
 EXIF-stripped and sent as the reference image for the cover and for every
 page; the cover is sent as a second reference for the pages so clothes stay
-consistent. Pages are generated three at a time with a 60-second limit each,
-so a plates request can take a few minutes; no new page starts after about two and a half
-minutes, to keep the request (and the pictures already taken) inside Vercel's
+consistent. Pages are generated three at a time with a 90-second limit each,
+so a plates request can take a few minutes; no new page starts after just
+under two minutes, to keep the request (and the pictures already taken) inside Vercel's
 300-second limit.
 Every field that reaches the image model (scenes, looks, age, title,
 direction) is signed by /api/generate-book (`ORDER_CONFIRM_SECRET`), so the
 art routes only illustrate stories we wrote.
 
-Without `GEMINI_API_KEY`, or on any Gemini failure or safety refusal, the
+Without `OPENAI_API_KEY`, or on any OpenAI failure or safety refusal, the
 endpoints return null URLs: the stock typographic cover stays put, and
 Checkout keeps the order button locked and offers a retry. Each failed attempt
 is logged as `[art] ...` with the model, HTTP status and Google's message.
-`GEMINI_API_KEY` is required for art; Vercel deploys also need
+`OPENAI_API_KEY` is required for art; Vercel deploys also need
 `BLOB_READ_WRITE_TOKEN` (locally: `uploads/generated/`). Only pictures on your
 own Blob store, under `farsh-art/`, are accepted as ours: the host is taken
 from `BLOB_PUBLIC_HOST`, or derived from the token when that is unset.
@@ -72,12 +72,12 @@ from `BLOB_PUBLIC_HOST`, or derived from the token when that is unset.
 ```
 server.js              Express server: static files + the story/art API routes + rate limiting
 lib/generateBook.js     Builds the prompt, calls Claude, returns eleven page texts
-lib/generateArt.js      Gemini image pipeline: photo -> cover -> plates, three at a time
+lib/generateArt.js      OpenAI image pipeline: photo -> cover -> plates, three at a time
 lib/artPrompts.js       Photorealistic, identity-preserving prompt builders
 lib/pageCount.js        The number of story pages
 lib/scenesToken.js      Signs the scene lines between writer and illustrator
 lib/rateLimit.js        Per-IP + global rate limiting for the generation endpoints
-lib/stripExif.js        Strips EXIF metadata from an uploaded photo before it's sent to Gemini
+lib/stripExif.js        Strips EXIF metadata from an uploaded photo before it's sent to OpenAI
 api/                    Vercel serverless functions — one per route, mirroring server.js
 test/                   node --test unit tests for everything in lib/
 Landing Page.dc.html    )
@@ -92,7 +92,7 @@ docs/                   Design notes for this generation work
 
 See `docs/2026-08-16-ai-book-generation-design.md` for the reasoning behind
 what's wired up vs. simulated (payments) and what deploying the image
-pipeline needs (`GEMINI_API_KEY`, `BLOB_READ_WRITE_TOKEN` on Vercel).
+pipeline needs (`OPENAI_API_KEY`, `BLOB_READ_WRITE_TOKEN` on Vercel).
 
 ## Troubleshooting
 
