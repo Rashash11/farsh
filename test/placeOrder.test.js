@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert');
-const { placeOrder, validateOrder } = require('../lib/placeOrder');
+const { placeOrder, defaultSaveScreenshot, validateOrder } = require('../lib/placeOrder');
 const { composeOrderEmail, sendOrderEmail, orderNumber } = require('../lib/sendOrderEmail');
 const { verify } = require('../lib/orderToken');
 const { PAGE_COUNT } = require('../lib/pageCount');
@@ -130,9 +130,10 @@ test('composing an order email for a paid screenshot without ORDER_CONFIRM_SECRE
   assert.throws(() => composeOrderEmail(o, { secret: '' }), (err) => err.code === 'not_configured');
 });
 
-test('order numbers look like FA-####', () => {
-  assert.match(orderNumber(() => 0), /^FA-\d{4}$/);
-  assert.match(orderNumber(() => 0.999), /^FA-\d{4}$/);
+test('order numbers look like FA-###### and never start with a zero', () => {
+  assert.match(orderNumber(() => 0), /^FA-[1-9]\d{5}$/);
+  assert.match(orderNumber(() => 0.999999), /^FA-[1-9]\d{5}$/);
+  assert.match(orderNumber(), /^FA-[1-9]\d{5}$/);
 });
 
 // --- failure must never look like success ------------------------------------
@@ -333,4 +334,20 @@ test('no field can forge a line of the order email', () => {
   assert.ok(text.includes('  1: Once upon a time. Plate 1: https://evil.example.com/a.png'), text);
   assert.ok(text.includes('Address: 12 Nile St Cairo'), text);
   assert.ok(!/[\r\n]/.test(subject));
+});
+
+// A payment screenshot shows the customer's bank details. Its Blob URL is
+// public, so the key must be unguessable: the order number alone (six digits)
+// could be walked in an afternoon.
+test('a payment screenshot is saved under a key nobody can guess from the order number', async () => {
+  const keys = [];
+  const save = async (key, buf, { contentType }) => { keys.push({ key, contentType, size: buf.length }); return 'https://blob/' + key; };
+  const dataUrl = 'data:image/png;base64,' + Buffer.from('pngbytes').toString('base64');
+  const url = await defaultSaveScreenshot(dataUrl, 'FA-123456', save);
+  await defaultSaveScreenshot(dataUrl, 'FA-123456', save);
+  assert.strictEqual(url, 'https://blob/' + keys[0].key);
+  assert.match(keys[0].key, /^farsh-orders\/FA-123456-[0-9a-f]{24}\.png$/, keys[0].key);
+  assert.notStrictEqual(keys[0].key, keys[1].key, 'two uploads for one number must not collide');
+  assert.strictEqual(keys[0].contentType, 'image/png');
+  assert.strictEqual(keys[0].size, 8);
 });

@@ -1,7 +1,19 @@
+# Not uploaded to Vercel at all. lib/ and test/ cannot go here: the api/
+# functions require lib/ at runtime. Those paths are refused by the rewrites
+# in vercel.json instead (see lib/siteHeaders.js).
 node_modules
 .env
 .env.*
-docs
-tools
-server.js
+.github
+.claude
+.playwright-mcp
+.superpowers
 .thumbnail
+.vercel
+docs
+test
+tools
+uploads/generated
+workflows
+server.js
+*.md

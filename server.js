@@ -24,6 +24,7 @@ const { placeOrder } = require('./lib/placeOrder');
 const { verify: verifyOrderToken } = require('./lib/orderToken');
 const { sendPaymentDecision } = require('./lib/confirmPayment');
 const { renderReviewPage, renderResultPage, renderErrorPage } = require('./lib/orderConfirmPage');
+const { SECURITY_HEADERS, isHiddenPath } = require('./lib/siteHeaders');
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -33,6 +34,15 @@ const PORT = process.env.PORT || 4000;
 // NOT go through req.ip — see lib/clientIp.js for why the forwarded chain has
 // to be read from the right, and only when a proxy is actually in front.
 app.set('trust proxy', 1);
+
+// Browser security headers on everything, and a 404 for the parts of this
+// directory that are code rather than site. vercel.json does the same for
+// the deployed copy; lib/siteHeaders.js explains both.
+app.use((req, res, next) => {
+  res.set(SECURITY_HEADERS);
+  if (isHiddenPath(req.path)) return res.status(404).type('text').send('Not found');
+  next();
+});
 
 app.get('/', (req, res) => res.redirect('/Landing Page.dc.html'));
 

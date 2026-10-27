@@ -1,10 +1,80 @@
 {
   "redirects": [
-    { "source": "/", "destination": "/Landing%20Page.dc.html" }
+    {
+      "source": "/",
+      "destination": "/Landing%20Page.dc.html"
+    },
+    {
+      "source": "/(lib|test|docs|tools|node_modules)/(.*)",
+      "destination": "/",
+      "permanent": false
+    },
+    {
+      "source": "/api/(.*)\\.js",
+      "destination": "/",
+      "permanent": false
+    },
+    {
+      "source": "/(.*)\\.md",
+      "destination": "/",
+      "permanent": false
+    },
+    {
+      "source": "/(server\\.js|package\\.json|package-lock\\.json)",
+      "destination": "/",
+      "permanent": false
+    },
+    {
+      "source": "/(.*/)?\\.(.*)",
+      "destination": "/",
+      "permanent": false
+    }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https://*.public.blob.vercel-storage.com; connect-src 'self'; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'"
+        },
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "no-referrer"
+        },
+        {
+          "key": "Permissions-Policy",
+          "value": "camera=(), microphone=(), geolocation=()"
+        }
+      ]
+    },
+    {
+      "source": "/api/order-confirm",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-store"
+        }
+      ]
+    }
   ],
   "functions": {
-    "api/generate-plates.js": { "maxDuration": 300 },
-    "api/redraw-page.js": { "maxDuration": 300 },
-    "api/generate-cover.js": { "maxDuration": 300 }
+    "api/generate-plates.js": {
+      "maxDuration": 300
+    },
+    "api/redraw-page.js": {
+      "maxDuration": 300
+    },
+    "api/generate-cover.js": {
+      "maxDuration": 300
+    }
   }
 }
